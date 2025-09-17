@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import type { Route } from 'next'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth-store'
+import { authService } from '@/services/auth'
 import { 
   BookOpenIcon, 
   UserGroupIcon, 
@@ -19,23 +21,45 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
+interface NavigationItem {
+  name: string
+  href: Route
+  icon: React.ComponentType<{ className?: string }>
+}
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, logout } = useAuthStore()
   const router = useRouter()
+  const pathname = usePathname()
 
-  const handleLogout = () => {
-    logout()
-    localStorage.removeItem('auth-token')
-    router.push('/auth/login')
+  const handleLogout = async () => {
+    try {
+      // Call the auth service logout
+      await authService.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Clear local state and storage
+      logout()
+      localStorage.removeItem('auth-token')
+      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      
+      // Redirect to login page
+      router.push('/auth/login')
+    }
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: ChartBarIcon },
-    { name: 'Courses', href: '/dashboard/courses', icon: BookOpenIcon },
-    { name: 'Students', href: '/dashboard/students', icon: UserGroupIcon },
-    { name: 'Settings', href: '/dashboard/settings', icon: CogIcon },
-  ]
+    { name: 'Dashboard', href: '/dashboard' as Route, icon: ChartBarIcon },
+    { name: 'Courses', href: '/dashboard/courses' as Route, icon: BookOpenIcon },
+    { name: 'Students', href: '/dashboard/students' as Route, icon: UserGroupIcon },
+    { name: 'Settings', href: '/dashboard/settings' as Route, icon: CogIcon },
+  ] satisfies NavigationItem[]
+
+  const isActiveRoute = (href: string) => {
+    return pathname === href || pathname.startsWith(href + '/')
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,16 +78,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const isActive = isActiveRoute(item.href)
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isActive
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-primary-500' : ''}`} />
+                  {item.name}
+                </Link>
+              )
+            })}
           </nav>
         </div>
       </div>
@@ -75,16 +106,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <h1 className="text-xl font-bold text-gray-900">LMS</h1>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const isActive = isActiveRoute(item.href)
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isActive
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <item.icon className={`mr-3 h-5 w-5 ${isActive ? 'text-primary-500' : ''}`} />
+                  {item.name}
+                </Link>
+              )
+            })}
           </nav>
           <div className="flex-shrink-0 border-t border-gray-200 p-4">
             <div className="flex items-center">
