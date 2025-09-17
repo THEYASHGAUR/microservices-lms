@@ -1,0 +1,2 @@
+will add the testing frameworks like jest , react testing library 
+to make this application fast , optmized and performance efficient and easy to use , maintain and develop.
