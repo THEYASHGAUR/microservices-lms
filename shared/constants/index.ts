@@ -52,9 +52,9 @@ export const JWT_CONFIG = {
 } as const;
 
 export const CORS_CONFIG = {
-  ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  CREDENTIALS: true
-} as const;
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true
+};
 
 export const UPLOAD_CONFIG = {
   MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB

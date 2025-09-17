@@ -19,7 +19,7 @@ const loginSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter()
-  const { login, setLoading, setError, clearError } = useAuthStore()
+  const { login, setLoading, setError, clearError, error } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
 
   const {
@@ -38,8 +38,11 @@ export function LoginForm() {
 
       const response = await authService.login(data)
       
-      // Store token in localStorage
+      console.log('Login response:', response)
+      
+      // Store token in localStorage and cookies
       localStorage.setItem('auth-token', response.token)
+      document.cookie = `auth-token=${response.token}; path=/; max-age=${24 * 60 * 60}` // 24 hours
       
       // Update auth store
       login(response)
@@ -64,6 +67,11 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
