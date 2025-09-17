@@ -1,0 +1,30 @@
+apiVersion: v2
+name: lms
+description: Learning Management System - Microservices Architecture
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - lms
+  - microservices
+  - education
+  - learning
+home: https://github.com/your-org/lms
+sources:
+  - https://github.com/your-org/lms
+maintainers:
+  - name: LMS Team
+    email: team@lms.com
+dependencies:
+  - name: postgresql
+    version: 12.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: 17.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: nginx-ingress
+    version: 4.x.x
+    repository: https://kubernetes.github.io/ingress-nginx
+    condition: ingress.enabled

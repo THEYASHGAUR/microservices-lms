@@ -1,0 +1,273 @@
+# Default values for lms
+# This is a YAML-formatted file.
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Image settings
+image:
+  registry: docker.io
+  repository: lms
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Service settings
+service:
+  type: ClusterIP
+  port: 80
+
+# Ingress settings
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: lms.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: lms-tls
+      hosts:
+        - lms.yourdomain.com
+
+# Resource limits
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# API Gateway
+apiGateway:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: lms/api-gateway
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Auth Service
+authService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: lms/auth-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3001
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# User Service
+userService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: lms/user-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3002
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Video Service
+videoService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: lms/video-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3003
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Chat & Call Service
+chatCallService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: lms/chat-call-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3004
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Payment Service
+paymentService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: lms/payment-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3005
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Notification Service
+notificationService:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: lms/notification-service
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3006
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Frontend
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: lms/frontend
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 125m
+      memory: 128Mi
+
+# PostgreSQL
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "postgres"
+    database: "lms_db"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+# Redis
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Monitoring
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    service:
+      type: ClusterIP
+      port: 9090
+  grafana:
+    enabled: true
+    service:
+      type: ClusterIP
+      port: 3000
+    adminPassword: "admin"
+
+# Environment variables
+env:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  JWT_SECRET: "your-super-secret-jwt-key"
+  DB_HOST: "postgresql"
+  DB_PORT: "5432"
+  DB_NAME: "lms_db"
+  DB_USER: "postgres"
+  DB_PASSWORD: "postgres"
+  REDIS_HOST: "redis-master"
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: "redis-password"
