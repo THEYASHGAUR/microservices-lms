@@ -1,0 +1,81 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.tfplan
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# Helm
+charts/*.tgz
+Chart.lock
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.backup
+*.bak
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Security
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Build artifacts
+*.tar.gz
+*.zip
+*.rar
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+
+# Database dumps
+*.sql
+*.dump
+
+# SSL certificates
+ssl/
+certs/
