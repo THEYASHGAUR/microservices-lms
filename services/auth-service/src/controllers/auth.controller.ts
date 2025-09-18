@@ -101,18 +101,17 @@ export class AuthController {
 
   async refresh(req: Request, res: Response): Promise<void> {
     try {
-      const authHeader = req.headers.authorization;
+      const { refreshToken } = req.body;
       
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401).json({
+      if (!refreshToken) {
+        res.status(400).json({
           success: false,
-          message: 'No token provided'
+          message: 'Refresh token is required'
         });
         return;
       }
 
-      const token = authHeader.substring(7);
-      const result = await authService.refreshToken(token);
+      const result = await authService.refreshToken(refreshToken);
       
       res.status(200).json({
         success: true,
@@ -131,11 +130,14 @@ export class AuthController {
   async logout(req: Request, res: Response): Promise<void> {
     try {
       const authHeader = req.headers.authorization;
+      const { refreshToken } = req.body;
       
+      let accessToken = '';
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        await authService.logout(token);
+        accessToken = authHeader.substring(7);
       }
+      
+      await authService.logout(accessToken, refreshToken);
       
       res.status(200).json({
         success: true,
@@ -164,6 +166,141 @@ export class AuthController {
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve users'
+      });
+    }
+  }
+
+  async updateProfile(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      const { name, email } = req.body;
+      
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'User not authenticated'
+        });
+        return;
+      }
+
+      const result = await authService.updateUserProfile(userId, { name, email });
+      
+      res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully',
+        data: result
+      });
+    } catch (error: any) {
+      logger.error('Update profile error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to update profile'
+      });
+    }
+  }
+
+  async changePassword(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'User not authenticated'
+        });
+        return;
+      }
+
+      if (!currentPassword || !newPassword) {
+        res.status(400).json({
+          success: false,
+          message: 'Current password and new password are required'
+        });
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        res.status(400).json({
+          success: false,
+          message: 'New password must be at least 6 characters long'
+        });
+        return;
+      }
+
+      await authService.changePassword(userId, currentPassword, newPassword);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Password changed successfully'
+      });
+    } catch (error: any) {
+      logger.error('Change password error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to change password'
+      });
+    }
+  }
+
+  async requestPasswordReset(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        res.status(400).json({
+          success: false,
+          message: 'Email is required'
+        });
+        return;
+      }
+
+      await authService.requestPasswordReset(email);
+      
+      res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent'
+      });
+    } catch (error: any) {
+      logger.error('Password reset request error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process password reset request'
+      });
+    }
+  }
+
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        res.status(400).json({
+          success: false,
+          message: 'Token and new password are required'
+        });
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        res.status(400).json({
+          success: false,
+          message: 'New password must be at least 6 characters long'
+        });
+        return;
+      }
+
+      await authService.resetPassword(token, newPassword);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Password has been reset successfully'
+      });
+    } catch (error: any) {
+      logger.error('Password reset error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to reset password'
       });
     }
   }

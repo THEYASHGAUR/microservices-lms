@@ -8,6 +8,7 @@ export interface SignupCredentials {
   email: string
   password: string
   confirmPassword: string
+  role: 'student' | 'instructor'
 }
 
 export interface User {
@@ -22,6 +23,7 @@ export interface User {
 export interface AuthResponse {
   user: User
   token: string
+  refreshToken: string
 }
 
 export interface AuthError {

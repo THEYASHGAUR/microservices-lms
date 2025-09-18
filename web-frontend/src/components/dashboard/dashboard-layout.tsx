@@ -50,12 +50,42 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard' as Route, icon: ChartBarIcon },
-    { name: 'Courses', href: '/dashboard/courses' as Route, icon: BookOpenIcon },
-    { name: 'Students', href: '/dashboard/students' as Route, icon: UserGroupIcon },
-    { name: 'Settings', href: '/dashboard/settings' as Route, icon: CogIcon },
-  ] satisfies NavigationItem[]
+  const getNavigation = (): NavigationItem[] => {
+    const baseNavigation = [
+      { name: 'Dashboard', href: '/dashboard' as Route, icon: ChartBarIcon },
+    ]
+
+    if (user?.role === 'admin') {
+      return [
+        ...baseNavigation,
+        { name: 'User Management', href: '/dashboard/users' as Route, icon: UserGroupIcon },
+        { name: 'System Settings', href: '/dashboard/settings' as Route, icon: CogIcon },
+      ]
+    }
+
+    if (user?.role === 'instructor') {
+      return [
+        ...baseNavigation,
+        { name: 'My Courses', href: '/dashboard/courses' as Route, icon: BookOpenIcon },
+        { name: 'Students', href: '/dashboard/students' as Route, icon: UserGroupIcon },
+        { name: 'Profile', href: '/dashboard/profile' as Route, icon: CogIcon },
+      ]
+    }
+
+    if (user?.role === 'student') {
+      return [
+        ...baseNavigation,
+        { name: 'My Courses', href: '/dashboard/courses' as Route, icon: BookOpenIcon },
+        { name: 'Assignments', href: '/dashboard/assignments' as Route, icon: ChartBarIcon },
+        { name: 'Grades', href: '/dashboard/grades' as Route, icon: ChartBarIcon },
+        { name: 'Profile', href: '/dashboard/profile' as Route, icon: CogIcon },
+      ]
+    }
+
+    return baseNavigation
+  }
+
+  const navigation = getNavigation()
 
   const isActiveRoute = (href: string) => {
     return pathname === href || pathname.startsWith(href + '/')
