@@ -1,128 +1,161 @@
-import axios from 'axios'
+import { supabase, auth } from '@/lib/supabase'
 import type { LoginCredentials, SignupCredentials, AuthResponse } from '@/types/auth'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
-
-const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-// Request interceptor to add auth token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth-token') || 
-    document.cookie.split('; ').find(row => row.startsWith('auth-token='))?.split('=')[1]
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// Response interceptor to handle auth errors and token refresh
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config
-    
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-      
-      const refreshToken = localStorage.getItem('refresh-token')
-      
-      if (refreshToken) {
-        try {
-          const response = await api.post('/auth/refresh', { refreshToken })
-          const { token, refreshToken: newRefreshToken } = response.data.data
-          
-          localStorage.setItem('auth-token', token)
-          localStorage.setItem('refresh-token', newRefreshToken)
-          document.cookie = `auth-token=${token}; path=/; max-age=${15 * 60}` // 15 minutes
-          
-          // Retry the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${token}`
-          return api(originalRequest)
-        } catch (refreshError) {
-          // Refresh failed, redirect to login
-          localStorage.removeItem('auth-token')
-          localStorage.removeItem('refresh-token')
-          document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-          window.location.href = '/auth/login'
-        }
-      } else {
-        // No refresh token, redirect to login
-        localStorage.removeItem('auth-token')
-        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-        window.location.href = '/auth/login'
-      }
-    }
-    
-    return Promise.reject(error)
-  }
-)
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await api.post('/auth/login', credentials)
-    const authData = response.data.data
+    const { data, error } = await auth.signIn(credentials.email, credentials.password)
     
-    // Store tokens
-    localStorage.setItem('auth-token', authData.token)
-    localStorage.setItem('refresh-token', authData.refreshToken)
-    document.cookie = `auth-token=${authData.token}; path=/; max-age=${15 * 60}` // 15 minutes
-    
-    return authData
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    if (!data.user || !data.session) {
+      throw new Error('Login failed')
+    }
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single()
+
+    const user = {
+      id: data.user.id,
+      email: data.user.email!,
+      name: profile?.full_name || data.user.user_metadata?.name || 'User',
+      role: data.user.user_metadata?.role || 'student',
+      createdAt: data.user.created_at,
+      updatedAt: data.user.updated_at || data.user.created_at
+    }
+
+    return {
+      user,
+      token: data.session.access_token,
+      refreshToken: data.session.refresh_token
+    }
   },
 
   async signup(credentials: Omit<SignupCredentials, 'confirmPassword'>): Promise<AuthResponse> {
-    const response = await api.post('/auth/signup', credentials)
-    const authData = response.data.data
+    console.log('Attempting signup with:', { 
+      email: credentials.email, 
+      name: credentials.name, 
+      role: credentials.role 
+    })
     
-    // Store tokens
-    localStorage.setItem('auth-token', authData.token)
-    localStorage.setItem('refresh-token', authData.refreshToken)
-    document.cookie = `auth-token=${authData.token}; path=/; max-age=${15 * 60}` // 15 minutes
+    const { data, error } = await auth.signUp(
+      credentials.email, 
+      credentials.password,
+      { name: credentials.name, role: credentials.role || 'student' }
+    )
     
-    return authData
+    if (error) {
+      console.error('Supabase signup error:', error)
+      throw new Error(error.message)
+    }
+
+    console.log('Supabase signup response:', { 
+      user: data.user ? 'exists' : 'null', 
+      session: data.session ? 'exists' : 'null',
+      userConfirmed: data.user?.email_confirmed_at ? 'confirmed' : 'pending'
+    })
+
+    if (!data.user) {
+      throw new Error('User creation failed')
+    }
+
+    // If no session, user needs to confirm email
+    if (!data.session) {
+      throw new Error('Please check your email and click the confirmation link to complete signup')
+    }
+
+    // Profile is automatically created by database trigger
+    // No need to manually insert here
+
+    // Get the profile created by the trigger
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single()
+
+    const user = {
+      id: data.user.id,
+      email: data.user.email!,
+      name: profile?.full_name || credentials.name,
+      role: credentials.role || 'student',
+      createdAt: data.user.created_at,
+      updatedAt: data.user.updated_at || data.user.created_at
+    }
+
+    return {
+      user,
+      token: data.session.access_token,
+      refreshToken: data.session.refresh_token
+    }
   },
 
   async logout(): Promise<void> {
-    const refreshToken = localStorage.getItem('refresh-token')
-    await api.post('/auth/logout', { refreshToken })
-    localStorage.removeItem('auth-token')
-    localStorage.removeItem('refresh-token')
-    document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    const { error } = await auth.signOut()
+    if (error) {
+      console.error('Logout error:', error)
+    }
   },
 
-  async verifyToken(token: string): Promise<AuthResponse> {
-    const response = await api.get('/auth/verify', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    return response.data.data
+  async verifyToken(): Promise<any> {
+    const { data, error } = await auth.getUser()
+    
+    if (error || !data.user) {
+      throw new Error('Invalid token')
+    }
+
+    return data.user
   },
 
-  async refreshToken(): Promise<AuthResponse> {
-    const response = await api.post('/auth/refresh')
-    return response.data.data
+  async getSession(): Promise<any> {
+    const { data, error } = await auth.getSession()
+    
+    if (error) {
+      throw new Error('Session error')
+    }
+
+    return data.session
   },
 
-  async updateProfile(data: { name: string; email: string }): Promise<AuthResponse> {
-    const response = await api.put('/auth/profile', data)
-    return response.data.data
+  async updateProfile(data: { name: string; email: string }): Promise<any> {
+    const { error } = await supabase
+      .from('profiles')
+      .update(data)
+      .eq('id', (await auth.getUser()).data.user?.id)
+
+    if (error) {
+      throw new Error('Failed to update profile')
+    }
+
+    return data
   },
 
   async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
-    await api.put('/auth/change-password', data)
+    const { error } = await auth.updatePassword(data.newPassword)
+    
+    if (error) {
+      throw new Error('Failed to change password')
+    }
   },
 
   async requestPasswordReset(email: string): Promise<void> {
-    await api.post('/auth/request-password-reset', { email })
+    const { error } = await auth.resetPassword(email)
+    
+    if (error) {
+      throw new Error('Failed to send reset email')
+    }
   },
 
   async resetPassword(data: { token: string; newPassword: string }): Promise<void> {
-    await api.post('/auth/reset-password', data)
+    const { error } = await auth.updatePassword(data.newPassword)
+    
+    if (error) {
+      throw new Error('Failed to reset password')
+    }
   },
 }

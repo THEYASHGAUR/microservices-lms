@@ -69,7 +69,7 @@ export function SignupForm() {
       router.push('/dashboard')
     } catch (error: any) {
       console.log('Signup error:', error);
-      const errorMessage = error.response?.data?.message || 'Signup failed. Please try again.'
+      const errorMessage = error.message || error.response?.data?.message || 'Signup failed. Please try again.'
       setError(errorMessage)
     } finally {
       setIsLoading(false)
@@ -196,6 +196,13 @@ export function SignupForm() {
               <p className="text-sm text-red-500">{errors.role.message}</p>
             )}
           </div>
+
+          {/* Error Message Display */}
+          {useAuthStore.getState().error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{useAuthStore.getState().error}</p>
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Creating account...' : 'Create Account'}

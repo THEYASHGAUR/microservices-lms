@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
 import { JWTPayload, UserRole } from '../types';
-import { JWT_CONFIG, HTTP_STATUS, ERROR_MESSAGES } from '../constants';
+import { HTTP_STATUS, ERROR_MESSAGES } from '../constants';
 import logger from '../logger';
+
+// Supabase client for JWT verification
+const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'your-service-role-key';
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Extend Express Request interface to include user
 declare global {
@@ -13,7 +18,7 @@ declare global {
   }
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -30,13 +35,33 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_CONFIG.SECRET) as JWTPayload;
-    req.user = decoded;
+    // Verify token with Supabase
+    const { data, error } = await supabase.auth.getUser(token);
+    
+    if (error || !data.user) {
+      throw new Error('Invalid token');
+    }
+
+    // Get user profile with role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    const userPayload: JWTPayload = {
+      userId: data.user.id,
+      email: data.user.email!,
+      role: profile?.role || data.user.user_metadata?.role || 'student',
+      name: profile?.name || data.user.user_metadata?.name || 'User'
+    };
+
+    req.user = userPayload;
     
     logger.info('User authenticated successfully', {
-      userId: decoded.userId,
-      email: decoded.email,
-      role: decoded.role,
+      userId: userPayload.userId,
+      email: userPayload.email,
+      role: userPayload.role,
       path: req.path
     });
     
@@ -91,14 +116,32 @@ export const authorizeRoles = (...roles: UserRole[]) => {
   };
 };
 
-export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, JWT_CONFIG.SECRET) as JWTPayload;
-      req.user = decoded;
+      // Verify token with Supabase
+      const { data, error } = await supabase.auth.getUser(token);
+      
+      if (!error && data.user) {
+        // Get user profile with role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        const userPayload: JWTPayload = {
+          userId: data.user.id,
+          email: data.user.email!,
+          role: profile?.role || data.user.user_metadata?.role || 'student',
+          name: profile?.name || data.user.user_metadata?.name || 'User'
+        };
+
+        req.user = userPayload;
+      }
     } catch (error) {
       // Token is invalid, but we don't fail the request
       logger.debug('Optional auth failed: Invalid token', {
