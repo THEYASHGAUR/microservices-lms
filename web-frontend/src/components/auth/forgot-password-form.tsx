@@ -7,7 +7,7 @@ import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { authService } from '@/services/auth'
+import { authService } from '@/services/auth-api-client'
 import Link from 'next/link'
 
 const forgotPasswordSchema = z.object({

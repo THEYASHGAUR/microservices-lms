@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 import logger from '../logger';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+import { supabase } from '../../services/auth-service/src/config/supabase';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -12,7 +10,8 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+// Verifies Supabase JWT token and extracts user information
+export const authenticateToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
@@ -25,12 +24,30 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    // Verify token with Supabase
+    const { data, error } = await supabase.auth.getUser(token);
+    
+    if (error || !data.user) {
+      res.status(403).json({
+        success: false,
+        message: 'Invalid or expired token'
+      });
+      return;
+    }
+
+    // Get user profile with role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
     req.user = {
-      userId: decoded.userId,
-      email: decoded.email,
-      role: decoded.role
+      userId: data.user.id,
+      email: data.user.email!,
+      role: profile?.role || data.user.user_metadata?.role || 'student'
     };
+    
     next();
   } catch (error) {
     logger.error('Token verification failed:', error);

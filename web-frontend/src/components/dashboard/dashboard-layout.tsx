@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import type { Route } from 'next'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/auth-store'
-import { authService } from '@/services/auth'
+import { authService } from '@/services/auth-api-client'
 import { 
   BookOpenIcon, 
   UserGroupIcon, 

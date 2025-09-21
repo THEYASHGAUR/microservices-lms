@@ -4,8 +4,8 @@ export interface User {
   name: string;
   password: string;
   role: 'student' | 'instructor' | 'admin';
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateUserData {

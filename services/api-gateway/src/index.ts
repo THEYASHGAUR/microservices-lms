@@ -25,7 +25,7 @@ app.use('/api/auth', createProxyMiddleware({
   target: `http://localhost:${SERVICE_PORTS.AUTH_SERVICE}`,
   changeOrigin: true,
   pathRewrite: {
-    '^/api/auth': '/api'
+    '^/api/auth': '/auth'
   }
 }));
 

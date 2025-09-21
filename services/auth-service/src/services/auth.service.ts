@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { supabase } from '../config/supabase';
 import { CreateUserData, LoginCredentials, AuthResponse } from '../models/user.model';
 import logger from '../../../../shared/logger';
@@ -5,6 +6,7 @@ import logger from '../../../../shared/logger';
 // Supabase handles user storage, JWT tokens, and session management
 
 export class AuthService {
+  // Authenticates user with email and password credentials
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const { email, password } = credentials;
 
@@ -34,8 +36,8 @@ export class AuthService {
         email: data.user.email!,
         name: profile?.name || data.user.user_metadata?.name || 'User',
         role: profile?.role || data.user.user_metadata?.role || 'student',
-        createdAt: new Date(data.user.created_at),
-        updatedAt: new Date(data.user.updated_at || data.user.created_at)
+        createdAt: new Date(data.user.created_at).toISOString(),
+        updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
       };
 
       logger.info(`User ${email} logged in successfully`);
@@ -51,6 +53,7 @@ export class AuthService {
     }
   }
 
+  // Creates new user account with email, name, password and role
   async signup(userData: CreateUserData): Promise<AuthResponse> {
     const { email, name, password, role = 'student' } = userData;
 
@@ -98,8 +101,8 @@ export class AuthService {
         email: data.user.email!,
         name,
         role,
-        createdAt: new Date(data.user.created_at),
-        updatedAt: new Date(data.user.updated_at || data.user.created_at)
+        createdAt: new Date(data.user.created_at).toISOString(),
+        updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
       };
 
       logger.info(`New user ${email} registered successfully`);
@@ -115,6 +118,7 @@ export class AuthService {
     }
   }
 
+  // Validates JWT token and returns user data
   async verifyToken(token: string): Promise<any> {
     try {
       const { data, error } = await supabase.auth.getUser(token);
@@ -135,14 +139,15 @@ export class AuthService {
         email: data.user.email,
         name: profile?.name || data.user.user_metadata?.name || 'User',
         role: profile?.role || data.user.user_metadata?.role || 'student',
-        createdAt: new Date(data.user.created_at),
-        updatedAt: new Date(data.user.updated_at || data.user.created_at)
+        createdAt: new Date(data.user.created_at).toISOString(),
+        updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
       };
     } catch (error) {
       throw new Error('Invalid token');
     }
   }
 
+  // Refreshes expired access token using refresh token
   async refreshToken(refreshToken: string): Promise<AuthResponse> {
     try {
       const { data, error } = await supabase.auth.refreshSession({
@@ -165,8 +170,8 @@ export class AuthService {
         email: data.user.email!,
         name: profile?.name || data.user.user_metadata?.name || 'User',
         role: profile?.role || data.user.user_metadata?.role || 'student',
-        createdAt: new Date(data.user.created_at),
-        updatedAt: new Date(data.user.updated_at || data.user.created_at)
+        createdAt: new Date(data.user.created_at).toISOString(),
+        updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
       };
 
       return {
@@ -179,6 +184,7 @@ export class AuthService {
     }
   }
 
+  // Logs out user and invalidates all sessions
   async logout(accessToken: string, refreshToken?: string): Promise<void> {
     try {
       // Supabase handles token invalidation automatically
@@ -191,7 +197,7 @@ export class AuthService {
     }
   }
 
-  // Helper method to get all users (for admin purposes)
+  // Retrieves all user profiles from database for admin purposes
   async getAllUsers(): Promise<any[]> {
     try {
       const { data, error } = await supabase
@@ -209,7 +215,7 @@ export class AuthService {
     }
   }
 
-  // Update user profile
+  // Updates user profile information in database
   async updateUserProfile(userId: string, updateData: { name?: string; email?: string }): Promise<any> {
     try {
       // Update profile in profiles table
@@ -231,7 +237,7 @@ export class AuthService {
     }
   }
 
-  // Change user password
+  // Changes user password after verifying current password
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     try {
       // Supabase handles password change through auth
@@ -250,11 +256,11 @@ export class AuthService {
     }
   }
 
-  // Request password reset
+  // Sends password reset email to user
   async requestPasswordReset(email: string): Promise<void> {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${process.env.FRONTEND_URL}/auth/reset-password`
+        redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/reset-password`
       });
 
       if (error) {
@@ -269,7 +275,7 @@ export class AuthService {
     }
   }
 
-  // Reset password with token
+  // Resets user password using reset token
   async resetPassword(token: string, newPassword: string): Promise<void> {
     try {
       // Supabase handles password reset through auth

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/stores/auth-store'
-import { authService } from '@/services/auth'
+import { authService } from '@/services/auth-api-client'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
 const profileSchema = z.object({

@@ -93,7 +93,7 @@ This project follows a microservices architecture with the following services:
 1. **Clone the repository:**
 ```bash
 git clone <repository-url>
-cd lms
+cd microservices-lms
 ```
 
 2. **Set up Supabase (Required for Authentication):**
@@ -114,11 +114,20 @@ cp .env.example .env
 # Edit .env with your Supabase credentials
 ```
 
-4. **Start the Frontend (Recommended for Development):**
+4. **Start All Services (Microservices Architecture):**
 ```bash
-cd web-frontend
-npm install
-npm run dev
+# Option 1: Use the startup script (Recommended)
+./start-microservices.sh
+
+# Option 2: Start manually in separate terminals
+# Terminal 1: Auth Service
+cd services/auth-service && npm run dev
+
+# Terminal 2: API Gateway  
+cd services/api-gateway && npm run dev
+
+# Terminal 3: Web Frontend
+cd web-frontend && npm run dev
 ```
 
 5. **Or start with Docker Compose (Full Stack):**
@@ -128,9 +137,9 @@ docker-compose -f docker-compose.dev.yml up -d
 ```
 
 6. **Access the application:**
-- Frontend: http://localhost:3000 (Next.js dev server)
-- API Gateway: http://localhost:3000 (if using full stack)
-- Individual services: http://localhost:3001-3006
+- **Frontend**: http://localhost:3000 (Next.js dev server)
+- **API Gateway**: http://localhost:3000/api (Single entry point)
+- **Individual services**: http://localhost:3001-3006 (Direct access for debugging)
 
 ### 🏭 Production Deployment
 

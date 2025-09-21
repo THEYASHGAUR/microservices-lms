@@ -4,6 +4,7 @@ import { LoginCredentials, CreateUserData } from '../models/user.model';
 import logger from '../../../../shared/logger';
 
 export class AuthController {
+  // Handles user login request and returns authentication response
   async login(req: Request, res: Response): Promise<void> {
     try {
       const credentials: LoginCredentials = req.body;
@@ -33,6 +34,7 @@ export class AuthController {
     }
   }
 
+  // Handles user registration request and creates new account
   async signup(req: Request, res: Response): Promise<void> {
     try {
       const userData: CreateUserData = req.body;
@@ -70,6 +72,7 @@ export class AuthController {
     }
   }
 
+  // Verifies JWT token and returns user information
   async verify(req: Request, res: Response): Promise<void> {
     try {
       const authHeader = req.headers.authorization;
@@ -99,6 +102,7 @@ export class AuthController {
     }
   }
 
+  // Refreshes expired access token using refresh token
   async refresh(req: Request, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
@@ -127,6 +131,7 @@ export class AuthController {
     }
   }
 
+  // Handles user logout and invalidates session
   async logout(req: Request, res: Response): Promise<void> {
     try {
       const authHeader = req.headers.authorization;
@@ -152,6 +157,7 @@ export class AuthController {
     }
   }
 
+  // Retrieves all users for admin purposes
   async getUsers(req: Request, res: Response): Promise<void> {
     try {
       const users = await authService.getAllUsers();
@@ -170,6 +176,7 @@ export class AuthController {
     }
   }
 
+  // Updates user profile information
   async updateProfile(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user?.userId;
@@ -199,6 +206,7 @@ export class AuthController {
     }
   }
 
+  // Changes user password with current password verification
   async changePassword(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user?.userId;
@@ -243,6 +251,7 @@ export class AuthController {
     }
   }
 
+  // Sends password reset email to user
   async requestPasswordReset(req: Request, res: Response): Promise<void> {
     try {
       const { email } = req.body;
@@ -270,6 +279,7 @@ export class AuthController {
     }
   }
 
+  // Resets user password using reset token
   async resetPassword(req: Request, res: Response): Promise<void> {
     try {
       const { token, newPassword } = req.body;
