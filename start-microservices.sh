@@ -79,11 +79,6 @@ echo "   Frontend:     http://localhost:3000"
 echo "   API Gateway:  http://localhost:3000/api"
 echo "   Auth Service: http://localhost:3001/auth"
 echo ""
-echo "🔐 Test Credentials:"
-echo "   Admin:     admin@lms.com / password"
-echo "   Student:   student@lms.com / password"
-echo "   Instructor: instructor@lms.com / password"
-echo ""
 echo "🛑 To stop all services, press Ctrl+C"
 
 # Function to cleanup on exit

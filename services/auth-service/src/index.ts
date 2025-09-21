@@ -30,9 +30,4 @@ app.use('/auth', authRoutes);
 
 app.listen(PORT, () => {
   logger.info(`Auth service running on port ${PORT}`);
-  logger.info('Default test credentials:');
-  logger.info('Admin: admin@lms.com / password');
-  logger.info('Instructor: instructor@lms.com / password');
-  logger.info('Student: student@lms.com / password');
-  logger.info('Deepanshu: deepanshu@gmail.com / password');
 });
