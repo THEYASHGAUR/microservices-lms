@@ -42,7 +42,7 @@ wait_for_service() {
 echo "🔍 Checking ports..."
 check_port 3000  # API Gateway
 check_port 3001  # Auth Service
-check_port 3007  # Web Frontend
+check_port 4000  # Web Frontend
 
 # Start Auth Service first (dependency for API Gateway)
 echo "🔐 Starting Auth Service..."
@@ -67,7 +67,7 @@ wait_for_service 3000 "API Gateway"
 # Start Web Frontend
 echo "💻 Starting Web Frontend..."
 cd web-frontend
-npm run dev &
+NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3000/api/auth} npm run dev &
 FRONTEND_PID=$!
 cd ..
 
@@ -75,7 +75,7 @@ echo ""
 echo "🎉 All services started successfully!"
 echo ""
 echo "📱 Access Points:"
-echo "   Frontend:     http://localhost:3000"
+echo "   Frontend:     http://localhost:4000"
 echo "   API Gateway:  http://localhost:3000/api"
 echo "   Auth Service: http://localhost:3001/auth"
 echo ""

@@ -17,7 +17,10 @@ real-time chat - Socket.io
 
 Payment - razorpay 
 
+Kafka
+
 real-time video calls - webRTC + Signaling + Livekit 
 
 
 AND ALL THESE SERVICES WILL BE CONNECTED THROUGH MICROSERVICES...
+

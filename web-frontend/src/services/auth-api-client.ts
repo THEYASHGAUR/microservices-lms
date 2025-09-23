@@ -1,6 +1,7 @@
 import type { LoginCredentials, SignupCredentials, AuthResponse } from '@/types/auth-types'
 
-const API_BASE_URL = 'http://localhost:3000'
+// Resolves base URL for auth API (gateway by default; can point directly to auth service via env)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000/api/auth'
 
 class ApiError extends Error {
   constructor(message: string, public status?: number) {
@@ -11,7 +12,7 @@ class ApiError extends Error {
 
 // Makes HTTP requests to auth service API endpoints
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE_URL}/api/auth${endpoint}`
+  const url = `${API_BASE_URL}${endpoint}`
   
   const response = await fetch(url, {
     headers: {

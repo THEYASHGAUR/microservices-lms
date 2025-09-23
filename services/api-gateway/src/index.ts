@@ -3,8 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { SERVICE_PORTS, CORS_CONFIG } from '../../../shared/constants';
-import logger from '../../../shared/logger';
+import constants from '../../../shared/constants/index.ts';
+const { SERVICE_PORTS, CORS_CONFIG } = constants as { SERVICE_PORTS: { API_GATEWAY: number; AUTH_SERVICE: number; USER_SERVICE: number; VIDEO_SERVICE: number; CHAT_CALL_SERVICE: number; PAYMENT_SERVICE: number; NOTIFICATION_SERVICE: number }; CORS_CONFIG: { origin: string | string[]; credentials: boolean } };
+// Startup logging will use console to avoid interop issues
 
 const app = express();
 const PORT = SERVICE_PORTS.API_GATEWAY;
@@ -70,5 +71,5 @@ app.use('/api/notifications', createProxyMiddleware({
 }));
 
 app.listen(PORT, () => {
-  logger.info(`API Gateway running on port ${PORT}`);
+  console.log(`API Gateway running on port ${PORT}`);
 });
