@@ -52,6 +52,7 @@ export function SignupForm() {
 
       // Remove confirmPassword before sending to API
       const { confirmPassword, ...signupData } = data
+      console.log('Making API call to:', 'http://localhost:3000/api/auth/signup');
       const response = await authService.signup(signupData)
       console.log('Signup response:', response);
 
@@ -68,7 +69,12 @@ export function SignupForm() {
       // Redirect to dashboard
       router.push('/dashboard')
     } catch (error: any) {
-      console.log('Signup error:', error);
+      console.error('Signup error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
       const errorMessage = error.message || error.response?.data?.message || 'Signup failed. Please try again.'
       setError(errorMessage)
     } finally {
@@ -86,7 +92,7 @@ export function SignupForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">
               Full Name

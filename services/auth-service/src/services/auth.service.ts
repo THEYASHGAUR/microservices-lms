@@ -77,8 +77,15 @@ export class AuthService {
         throw new Error(error.message);
       }
 
-      if (!data.user || !data.session) {
+      if (!data.user) {
         throw new Error('Signup failed');
+      }
+
+      // Handle email confirmation case
+      if (!data.session) {
+        // User created but needs email confirmation
+        logger.info(`User ${email} created but needs email confirmation`);
+        throw new Error('Please check your email and confirm your account before signing in');
       }
 
       // Create user profile

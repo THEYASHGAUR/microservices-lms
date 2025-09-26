@@ -1,73 +1,30 @@
 -- =====================================================
--- 1. USERS TABLE (Core Identity Data)
+-- PROFILES TABLE (Extendable User Info)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'STUDENT' CHECK (role IN ('ADMIN', 'INSTRUCTOR', 'STUDENT')),
-  is_active BOOLEAN DEFAULT TRUE,
+-- Note: We use Supabase Auth's auth.users table, so we only need profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT,
+  role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('admin', 'instructor', 'student')),
+  email TEXT,
+  avatar_url TEXT,
+  bio TEXT,
+  settings JSONB DEFAULT '{}', -- flexible user preferences
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS users_email_idx ON users(email);
-CREATE INDEX IF NOT EXISTS users_role_idx ON users(role);
-CREATE INDEX IF NOT EXISTS users_active_idx ON users(is_active);
-
--- =====================================================
--- 2. PROFILES TABLE (Extendable User Info)
--- =====================================================
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  full_name TEXT,
-  avatar_url TEXT,
-  bio TEXT,
-  settings JSONB DEFAULT '{}', -- flexible user preferences
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS profiles_full_name_idx ON profiles(full_name);
+CREATE INDEX IF NOT EXISTS profiles_name_idx ON profiles(name);
+CREATE INDEX IF NOT EXISTS profiles_role_idx ON profiles(role);
+CREATE INDEX IF NOT EXISTS profiles_email_idx ON profiles(email);
 CREATE INDEX IF NOT EXISTS profiles_settings_idx ON profiles USING GIN(settings);
 
 -- =====================================================
 -- ROW LEVEL SECURITY SETUP
 -- =====================================================
--- Enable RLS on all tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+-- Enable RLS on profiles table
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- =====================================================
--- USERS TABLE POLICIES
--- =====================================================
--- Users can view their own data
-CREATE POLICY "Users can view own data" ON users
-  FOR SELECT USING (auth.uid()::text = id::text);
-
--- Users can update their own data (except role)
-CREATE POLICY "Users can update own data" ON users
-  FOR UPDATE USING (auth.uid()::text = id::text)
-  WITH CHECK (auth.uid()::text = id::text);
-
--- Admins can view all users
-CREATE POLICY "Admins can view all users" ON users
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM users 
-      WHERE id::text = auth.uid()::text AND role = 'ADMIN'
-    )
-  );
-
--- Admins can update user roles
-CREATE POLICY "Admins can update user roles" ON users
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM users 
-      WHERE id::text = auth.uid()::text AND role = 'ADMIN'
-    )
-  );
 
 -- =====================================================
 -- PROFILES TABLE POLICIES
@@ -89,8 +46,8 @@ CREATE POLICY "Users can insert own profile" ON profiles
 CREATE POLICY "Admins can view all profiles" ON profiles
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM users 
-      WHERE id::text = auth.uid()::text AND role = 'ADMIN'
+      SELECT 1 FROM profiles 
+      WHERE id::text = auth.uid()::text AND role = 'admin'
     )
   );
 
@@ -110,10 +67,12 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, settings)
+  INSERT INTO public.profiles (id, name, email, role, settings)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', 'User'),
+    COALESCE(NEW.raw_user_meta_data->>'name', 'User'),
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'role', 'student'),
     COALESCE(NEW.raw_user_meta_data->'settings', '{}'::jsonb)
   );
   RETURN NEW;
@@ -123,12 +82,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- =====================================================
 -- TRIGGERS
 -- =====================================================
--- Trigger to update updated_at on users table
-DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-CREATE TRIGGER update_users_updated_at
-  BEFORE UPDATE ON users
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
 -- Trigger to update updated_at on profiles table
 DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 CREATE TRIGGER update_profiles_updated_at

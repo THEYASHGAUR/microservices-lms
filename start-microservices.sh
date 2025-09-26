@@ -67,7 +67,7 @@ wait_for_service 3000 "API Gateway"
 # Start Web Frontend
 echo "💻 Starting Web Frontend..."
 cd web-frontend
-NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3000/api/auth} npm run dev &
+NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3000} npm run dev &
 FRONTEND_PID=$!
 cd ..
 
