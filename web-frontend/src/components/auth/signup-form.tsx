@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { authService } from '@/services/auth-api-client'
 import type { SignupCredentials } from '@/types/auth-types'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import type { Route } from 'next' 
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -20,7 +21,7 @@ const signupSchema = z.object({
     .min(6, 'Password must be at least 6 characters')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
   confirmPassword: z.string(),
-  role: z.enum(['student', 'instructor'], {
+  role: z.enum(['student', 'instructor', 'admin'], {
     errorMap: () => ({ message: 'Please select a valid role' })
   }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -66,8 +67,8 @@ export function SignupForm() {
       login(response)
       console.log('Login response:', response);
       
-      // Redirect to dashboard
-      router.push('/dashboard')
+      // Redirect to home page (which will redirect to role-specific dashboard)
+      router.push('/' as Route) 
     } catch (error: any) {
       console.error('Signup error:', error);
       console.error('Error details:', {
@@ -197,6 +198,7 @@ export function SignupForm() {
               <option value="">Select your role</option>
               <option value="student">Student</option>
               <option value="instructor">Instructor</option>
+              <option value="admin">Admin</option>
             </select>
             {errors.role && (
               <p className="text-sm text-red-500">{errors.role.message}</p>

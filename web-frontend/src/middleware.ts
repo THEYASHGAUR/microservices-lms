@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
 
   // If user is authenticated and trying to access auth pages
   if (token && isPublicRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return NextResponse.next()

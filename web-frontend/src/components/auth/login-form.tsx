@@ -52,7 +52,7 @@ export function LoginForm() {
       login(response)
       
       // Redirect to dashboard
-      router.push('/dashboard')
+      router.push('/')
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Login failed. Please try again.'
       setError(errorMessage)

@@ -8,7 +8,7 @@ export interface SignupCredentials {
   email: string
   password: string
   confirmPassword: string
-  role: 'student' | 'instructor'
+  role: 'student' | 'instructor' | 'admin'
 }
 
 export interface User {

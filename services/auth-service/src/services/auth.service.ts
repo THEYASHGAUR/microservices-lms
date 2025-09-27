@@ -34,7 +34,7 @@ export class AuthService {
       const user = {
         id: data.user.id,
         email: data.user.email!,
-        name: profile?.name || data.user.user_metadata?.name || 'User',
+        name: profile?.name || profile?.full_name || data.user.user_metadata?.name || 'User',
         role: profile?.role || data.user.user_metadata?.role || 'student',
         createdAt: new Date(data.user.created_at).toISOString(),
         updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
@@ -144,7 +144,7 @@ export class AuthService {
       return {
         id: data.user.id,
         email: data.user.email,
-        name: profile?.name || data.user.user_metadata?.name || 'User',
+        name: profile?.name || profile?.full_name || data.user.user_metadata?.name || 'User',
         role: profile?.role || data.user.user_metadata?.role || 'student',
         createdAt: new Date(data.user.created_at).toISOString(),
         updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
@@ -175,7 +175,7 @@ export class AuthService {
       const user = {
         id: data.user.id,
         email: data.user.email!,
-        name: profile?.name || data.user.user_metadata?.name || 'User',
+        name: profile?.name || profile?.full_name || data.user.user_metadata?.name || 'User',
         role: profile?.role || data.user.user_metadata?.role || 'student',
         createdAt: new Date(data.user.created_at).toISOString(),
         updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()

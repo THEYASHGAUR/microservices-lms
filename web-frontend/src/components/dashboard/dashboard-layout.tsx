@@ -14,7 +14,9 @@ import {
   CogIcon,
   Bars3Icon,
   XMarkIcon,
-  ArrowRightOnRectangleIcon
+  ArrowRightOnRectangleIcon,
+  CreditCardIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
 
 interface DashboardLayoutProps {
@@ -35,8 +37,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      // Call the auth service logout
-      await authService.logout()
+      // Get token for logout call
+      const token = localStorage.getItem('auth-token') || document.cookie
+        .split(';')
+        .find(cookie => cookie.trim().startsWith('auth-token='))
+        ?.split('=')[1]
+      
+      if (token) {
+        // Call the auth service logout
+        await authService.logout(token)
+      }
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
@@ -51,44 +61,64 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   const getNavigation = (): NavigationItem[] => {
-    const baseNavigation = [
-      { name: 'Dashboard', href: '/dashboard' as Route, icon: ChartBarIcon },
-    ]
-
     if (user?.role === 'admin') {
       return [
-        ...baseNavigation,
-        { name: 'User Management', href: '/dashboard/users' as Route, icon: UserGroupIcon },
-        { name: 'System Settings', href: '/dashboard/settings' as Route, icon: CogIcon },
+        { name: 'Dashboard', href: '/admin/dashboard' as Route, icon: ChartBarIcon },
+        { name: 'User Management', href: '/admin/user-management' as Route, icon: UserGroupIcon },
+        { name: 'System Settings', href: '/admin/system-settings' as Route, icon: CogIcon },
+        { name: 'Profile', href: '/admin/profile' as Route, icon: CogIcon },
       ]
     }
 
     if (user?.role === 'instructor') {
       return [
-        ...baseNavigation,
-        { name: 'My Courses', href: '/dashboard/courses' as Route, icon: BookOpenIcon },
-        { name: 'Students', href: '/dashboard/students' as Route, icon: UserGroupIcon },
-        { name: 'Profile', href: '/dashboard/profile' as Route, icon: CogIcon },
+        { name: 'Dashboard', href: '/instructor/dashboard' as Route, icon: ChartBarIcon },
+        { name: 'My Courses', href: '/instructor/courses' as Route, icon: BookOpenIcon },
+        { name: 'Students List', href: '/instructor/students' as Route, icon: UserGroupIcon },
+        { name: 'Profile', href: '/instructor/profile' as Route, icon: CogIcon },
       ]
     }
 
     if (user?.role === 'student') {
       return [
-        ...baseNavigation,
-        { name: 'My Courses', href: '/dashboard/courses' as Route, icon: BookOpenIcon },
-        { name: 'Assignments', href: '/dashboard/assignments' as Route, icon: ChartBarIcon },
-        { name: 'Grades', href: '/dashboard/grades' as Route, icon: ChartBarIcon },
-        { name: 'Profile', href: '/dashboard/profile' as Route, icon: CogIcon },
+        { name: 'Dashboard', href: '/student/dashboard' as Route, icon: ChartBarIcon },
+        { name: 'My Courses', href: '/student/courses' as Route, icon: BookOpenIcon },
+        { name: 'Chats', href: '/student/chats' as Route, icon: ChatBubbleLeftRightIcon },
+        { name: 'Live Class', href: '/student/live-class' as Route, icon: ChartBarIcon },
+        { name: 'Assignments', href: '/student/assignments' as Route, icon: ChartBarIcon },
+        { name: 'Profile', href: '/student/profile' as Route, icon: CogIcon },
+        { name: 'Payment', href: '/student/payment' as Route, icon: CreditCardIcon },
+        { name: 'Settings', href: '/student/settings' as Route, icon: CogIcon }
       ]
     }
 
-    return baseNavigation
+    // Default fallback - redirect to login if no role
+    return []
   }
 
   const navigation = getNavigation()
 
   const isActiveRoute = (href: string) => {
     return pathname === href || pathname.startsWith(href + '/')
+  }
+
+  // Gets role badge color and styling
+  const getRoleBadgeStyle = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'instructor':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'student':
+        return 'bg-green-100 text-green-800 border-green-200'
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  // Capitalizes role name for display
+  const formatRole = (role: string) => {
+    return role.charAt(0).toUpperCase() + role.slice(1)
   }
 
   return (
@@ -126,6 +156,35 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               )
             })}
           </nav>
+          <div className="flex-shrink-0 border-t border-gray-200 p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center">
+                  <span className="text-sm font-medium text-white">
+                    {user?.name?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
+                {user?.role && (
+                  <span className={`inline-block text-xs px-2 py-0.5 rounded-full border mt-1 ${getRoleBadgeStyle(user.role)}`}>
+                    {formatRole(user.role)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="mt-2 w-full justify-start"
+            >
+              <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -166,6 +225,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-700">{user?.name}</p>
                 <p className="text-xs text-gray-500">{user?.email}</p>
+                {user?.role && (
+                  <span className={`inline-block text-xs px-2 py-0.5 rounded-full border mt-1 ${getRoleBadgeStyle(user.role)}`}>
+                    {formatRole(user.role)}
+                  </span>
+                )}
               </div>
             </div>
             <Button
@@ -196,15 +260,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex flex-1" />
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" />
-              <div className="flex items-center gap-x-2">
+              <div className="flex items-center gap-x-3">
                 <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center">
                   <span className="text-sm font-medium text-white">
                     {user?.name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <span className="hidden lg:block text-sm font-medium text-gray-700">
-                  {user?.name}
-                </span>
+                <div className="hidden lg:flex lg:flex-col lg:items-end">
+                  <span className="text-sm font-medium text-gray-700">
+                    {user?.name}
+                  </span>
+                  {user?.role && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${getRoleBadgeStyle(user.role)}`}>
+                      {formatRole(user.role)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
