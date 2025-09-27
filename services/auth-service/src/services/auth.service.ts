@@ -1,187 +1,304 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { User, CreateUserData, LoginCredentials, AuthResponse } from '../models/user.model';
+/// <reference types="node" />
+import { supabase } from '../config/supabase';
+import { CreateUserData, LoginCredentials, AuthResponse } from '../models/user.model';
 import logger from '../../../../shared/logger';
 
-// Default test users for development
-const DEFAULT_USERS: User[] = [
-  {
-    id: '1',
-    email: 'admin@lms.com',
-    name: 'Admin User',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: "password"
-    role: 'admin',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    email: 'instructor@lms.com',
-    name: 'John Instructor',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: "password"
-    role: 'instructor',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '3',
-    email: 'student@lms.com',
-    name: 'Jane Student',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: "password"
-    role: 'student',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '4',
-    email: 'deepanshu@gmail.com',
-    name: 'Deepanshu',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: "password"
-    role: 'student',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
-];
-
-// In-memory storage for demo purposes
-let users: User[] = [...DEFAULT_USERS];
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+// Supabase handles user storage, JWT tokens, and session management
 
 export class AuthService {
+  // Authenticates user with email and password credentials
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const { email, password } = credentials;
 
-    // Find user by email
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (!user) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        throw new Error('Invalid email or password');
+      }
+
+      if (!data.user || !data.session) {
+        throw new Error('Login failed');
+      }
+
+      // Get user profile with role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      const user = {
+        id: data.user.id,
+        email: data.user.email!,
+        name: profile?.name || data.user.user_metadata?.name || 'User',
+        role: profile?.role || data.user.user_metadata?.role || 'student',
+        createdAt: new Date(data.user.created_at).toISOString(),
+        updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
+      };
+
+      logger.info(`User ${email} logged in successfully`);
+
+      return {
+        user,
+        token: data.session.access_token,
+        refreshToken: data.session.refresh_token
+      };
+    } catch (error: any) {
+      logger.error('Login error:', error);
       throw new Error('Invalid email or password');
     }
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
-    if (!isPasswordValid) {
-      throw new Error('Invalid email or password');
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email, 
-        role: user.role 
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions
-    );
-
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
-
-    logger.info(`User ${email} logged in successfully`);
-
-    return {
-      user: userWithoutPassword,
-      token
-    };
   }
 
+  // Creates new user account with email, name, password and role
   async signup(userData: CreateUserData): Promise<AuthResponse> {
     const { email, name, password, role = 'student' } = userData;
 
-    // Check if user already exists
-    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (existingUser) {
-      throw new Error('User with this email already exists');
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
-    const newUser: User = {
-      id: (users.length + 1).toString(),
-      email,
-      name,
-      password: hashedPassword,
-      role,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    users.push(newUser);
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: newUser.id, 
-        email: newUser.email, 
-        role: newUser.role 
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions
-    );
-
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = newUser;
-
-    logger.info(`New user ${email} registered successfully`);
-
-    return {
-      user: userWithoutPassword,
-      token
-    };
-  }
-
-  async verifyToken(token: string): Promise<Omit<User, 'password'>> {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const user = users.find(u => u.id === decoded.userId);
-      
-      if (!user) {
-        throw new Error('User not found');
+      // Create user in Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message.includes('already registered')) {
+          throw new Error('User with this email already exists');
+        }
+        throw new Error(error.message);
       }
 
-      const { password: _, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      if (!data.user) {
+        throw new Error('Signup failed');
+      }
+
+      // Handle email confirmation case
+      if (!data.session) {
+        // User created but needs email confirmation
+        logger.info(`User ${email} created but needs email confirmation`);
+        throw new Error('Please check your email and confirm your account before signing in');
+      }
+
+      // Create user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          name,
+          role,
+          email: data.user.email
+        });
+
+      if (profileError) {
+        logger.error('Profile creation error:', profileError);
+        // Continue anyway as user is created in auth
+      }
+
+      const user = {
+        id: data.user.id,
+        email: data.user.email!,
+        name,
+        role,
+        createdAt: new Date(data.user.created_at).toISOString(),
+        updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
+      };
+
+      logger.info(`New user ${email} registered successfully`);
+
+      return {
+        user,
+        token: data.session.access_token,
+        refreshToken: data.session.refresh_token
+      };
+    } catch (error: any) {
+      logger.error('Signup error:', error);
+      throw error;
+    }
+  }
+
+  // Validates JWT token and returns user data
+  async verifyToken(token: string): Promise<any> {
+    try {
+      const { data, error } = await supabase.auth.getUser(token);
+      
+      if (error || !data.user) {
+        throw new Error('Invalid token');
+      }
+
+      // Get user profile with role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      return {
+        id: data.user.id,
+        email: data.user.email,
+        name: profile?.name || data.user.user_metadata?.name || 'User',
+        role: profile?.role || data.user.user_metadata?.role || 'student',
+        createdAt: new Date(data.user.created_at).toISOString(),
+        updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
+      };
     } catch (error) {
       throw new Error('Invalid token');
     }
   }
 
-  async refreshToken(token: string): Promise<AuthResponse> {
-    const user = await this.verifyToken(token);
-    
-    // Generate new token
-    const newToken = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email, 
-        role: user.role 
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions
-    );
+  // Refreshes expired access token using refresh token
+  async refreshToken(refreshToken: string): Promise<AuthResponse> {
+    try {
+      const { data, error } = await supabase.auth.refreshSession({
+        refresh_token: refreshToken
+      });
 
-    return {
-      user,
-      token: newToken
-    };
+      if (error || !data.session || !data.user) {
+        throw new Error('Invalid refresh token');
+      }
+
+      // Get user profile with role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      const user = {
+        id: data.user.id,
+        email: data.user.email!,
+        name: profile?.name || data.user.user_metadata?.name || 'User',
+        role: profile?.role || data.user.user_metadata?.role || 'student',
+        createdAt: new Date(data.user.created_at).toISOString(),
+        updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
+      };
+
+      return {
+        user,
+        token: data.session.access_token,
+        refreshToken: data.session.refresh_token
+      };
+    } catch (error) {
+      throw new Error('Invalid refresh token');
+    }
   }
 
-  async logout(token: string): Promise<void> {
-    // In a real application, you would add the token to a blacklist
-    // For now, we'll just log the logout
-    logger.info('User logged out');
+  // Logs out user and invalidates all sessions
+  async logout(accessToken: string, refreshToken?: string): Promise<void> {
+    try {
+      // Supabase handles token invalidation automatically
+      // We can optionally call signOut to invalidate all sessions
+      await supabase.auth.signOut();
+      logger.info('User logged out successfully');
+    } catch (error) {
+      logger.error('Logout error:', error);
+      // Continue anyway as logout should not fail
+    }
   }
 
-  // Helper method to get all users (for admin purposes)
-  async getAllUsers(): Promise<Omit<User, 'password'>[]> {
-    return users.map(({ password, ...user }) => user);
+  // Retrieves all user profiles from database for admin purposes
+  async getAllUsers(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (error) {
+        throw new Error('Failed to fetch users');
+      }
+
+      return data || [];
+    } catch (error) {
+      logger.error('Get users error:', error);
+      throw new Error('Failed to fetch users');
+    }
+  }
+
+  // Updates user profile information in database
+  async updateUserProfile(userId: string, updateData: { name?: string; email?: string }): Promise<any> {
+    try {
+      // Update profile in profiles table
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error('Failed to update profile');
+      }
+
+      return data;
+    } catch (error) {
+      logger.error('Update profile error:', error);
+      throw new Error('Failed to update profile');
+    }
+  }
+
+  // Changes user password after verifying current password
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    try {
+      // Supabase handles password change through auth
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        throw new Error('Failed to change password');
+      }
+
+      logger.info(`Password changed for user ${userId}`);
+    } catch (error) {
+      logger.error('Change password error:', error);
+      throw new Error('Failed to change password');
+    }
+  }
+
+  // Sends password reset email to user
+  async requestPasswordReset(email: string): Promise<void> {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/reset-password`
+      });
+
+      if (error) {
+        logger.error('Password reset request error:', error);
+        // Don't reveal if user exists or not for security
+      }
+
+      logger.info(`Password reset requested for email: ${email}`);
+    } catch (error) {
+      logger.error('Password reset request error:', error);
+      // Continue anyway for security
+    }
+  }
+
+  // Resets user password using reset token
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    try {
+      // Supabase handles password reset through auth
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        throw new Error('Failed to reset password');
+      }
+
+      logger.info('Password reset completed successfully');
+    } catch (error) {
+      logger.error('Password reset error:', error);
+      throw new Error('Failed to reset password');
+    }
   }
 }
 

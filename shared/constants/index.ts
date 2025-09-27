@@ -52,7 +52,7 @@ export const JWT_CONFIG = {
 } as const;
 
 export const CORS_CONFIG = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:4000',
   credentials: true
 };
 

@@ -3,8 +3,21 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { SERVICE_PORTS, CORS_CONFIG } from '../../../shared/constants';
-import logger from '../../../shared/logger';
+const SERVICE_PORTS = {
+  API_GATEWAY: 3000,
+  AUTH_SERVICE: 3001,
+  USER_SERVICE: 3002,
+  VIDEO_SERVICE: 3003,
+  CHAT_CALL_SERVICE: 3004,
+  PAYMENT_SERVICE: 3005,
+  NOTIFICATION_SERVICE: 3006
+};
+
+const CORS_CONFIG = {
+  origin: 'http://localhost:4000',
+  credentials: true
+};
+// Startup logging will use console to avoid interop issues
 
 const app = express();
 const PORT = SERVICE_PORTS.API_GATEWAY;
@@ -13,7 +26,6 @@ const PORT = SERVICE_PORTS.API_GATEWAY;
 app.use(helmet());
 app.use(cors(CORS_CONFIG));
 app.use(morgan('combined'));
-app.use(express.json());
 
 // Health check
 app.get('/health', (req, res) => {
@@ -25,7 +37,14 @@ app.use('/api/auth', createProxyMiddleware({
   target: `http://localhost:${SERVICE_PORTS.AUTH_SERVICE}`,
   changeOrigin: true,
   pathRewrite: {
-    '^/api/auth': '/api'
+    '^/api/auth': '/auth'
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    console.log('Proxying request to:', proxyReq.path);
+  },
+  onError: (err, req, res) => {
+    console.error('Proxy error:', err);
+    res.status(500).json({ error: 'Proxy error', message: err.message });
   }
 }));
 
@@ -70,5 +89,5 @@ app.use('/api/notifications', createProxyMiddleware({
 }));
 
 app.listen(PORT, () => {
-  logger.info(`API Gateway running on port ${PORT}`);
+  console.log(`API Gateway running on port ${PORT}`);
 });

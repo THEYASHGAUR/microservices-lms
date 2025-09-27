@@ -58,3 +58,6 @@ The system will display appropriate error messages for:
 - Use strong, unique passwords
 - Implement proper user registration
 - Use environment variables for sensitive data
+
+
+hi 

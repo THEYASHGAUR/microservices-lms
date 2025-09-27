@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/stores/auth-store'
-import { authService } from '@/services/auth'
-import type { LoginCredentials } from '@/types/auth'
+import { authService } from '@/services/auth-api-client'
+import type { LoginCredentials } from '@/types/auth-types'
+import Link from 'next/link'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -21,6 +23,7 @@ export function LoginForm() {
   const router = useRouter()
   const { login, setLoading, setError, clearError, error } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -40,9 +43,10 @@ export function LoginForm() {
       
       console.log('Login response:', response)
       
-      // Store token in localStorage and cookies
+      // Store tokens in localStorage and cookies
       localStorage.setItem('auth-token', response.token)
-      document.cookie = `auth-token=${response.token}; path=/; max-age=${24 * 60 * 60}` // 24 hours
+      localStorage.setItem('refresh-token', response.refreshToken)
+      document.cookie = `auth-token=${response.token}; path=/; max-age=${15 * 60}` // 15 minutes
       
       // Update auth store
       login(response)
@@ -93,22 +97,48 @@ export function LoginForm() {
             <label htmlFor="password" className="text-sm font-medium">
               Password
             </label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              {...register('password')}
-              className={errors.password ? 'border-red-500' : ''}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                {...register('password')}
+                className={`pr-10 ${errors.password ? 'border-red-500' : ''}`}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                ) : (
+                  <EyeIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-sm text-red-500">{errors.password.message}</p>
             )}
           </div>
 
+          {/* Error Message Display */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
+        
+        <div className="mt-4 text-center">
+          <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:text-blue-500">
+            Forgot your password?
+          </Link>
+        </div>
       </CardContent>
     </Card>
   )

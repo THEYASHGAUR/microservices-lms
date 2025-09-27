@@ -1,9 +1,24 @@
+// Load environment variables from .env file
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { SERVICE_PORTS, CORS_CONFIG } from '../../../shared/constants';
-import logger from '../../../shared/logger';
+const SERVICE_PORTS = {
+  AUTH_SERVICE: 3001,
+  USER_SERVICE: 3002,
+  VIDEO_SERVICE: 3003,
+  CHAT_CALL_SERVICE: 3004,
+  PAYMENT_SERVICE: 3005,
+  NOTIFICATION_SERVICE: 3006
+};
+
+const CORS_CONFIG = {
+  origin: 'http://localhost:4000',
+  credentials: true
+};
 import authRoutes from './routes/auth.routes';
 
 const app = express();
@@ -13,7 +28,8 @@ const PORT = SERVICE_PORTS.AUTH_SERVICE;
 app.use(helmet());
 app.use(cors(CORS_CONFIG));
 app.use(morgan('combined'));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -26,13 +42,8 @@ app.get('/api/test', (req, res) => {
 });
 
 // Auth routes
-app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
 
 app.listen(PORT, () => {
-  logger.info(`Auth service running on port ${PORT}`);
-  logger.info('Default test credentials:');
-  logger.info('Admin: admin@lms.com / password');
-  logger.info('Instructor: instructor@lms.com / password');
-  logger.info('Student: student@lms.com / password');
-  logger.info('Deepanshu: deepanshu@gmail.com / password');
+  console.log(`Auth service running on port ${PORT}`);
 });

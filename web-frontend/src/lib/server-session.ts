@@ -21,9 +21,9 @@ export async function getServerSession(): Promise<Session | null> {
   }
 
   try {
-    // In a real app, you would verify the token with your auth service
-    // For now, we'll simulate a session
-    const response = await fetch(`${process.env.API_BASE_URL}/api/auth/verify`, {
+    const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001'
+    
+    const response = await fetch(`${API_BASE_URL}/auth/verify`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -33,8 +33,8 @@ export async function getServerSession(): Promise<Session | null> {
       return null
     }
 
-    const user = await response.json()
-    return { user, token }
+    const data = await response.json()
+    return { user: data.data.user, token }
   } catch (error) {
     console.error('Error verifying session:', error)
     return null

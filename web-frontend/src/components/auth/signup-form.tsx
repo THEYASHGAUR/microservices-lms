@@ -9,14 +9,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/stores/auth-store'
-import { authService } from '@/services/auth'
-import type { SignupCredentials } from '@/types/auth'
+import { authService } from '@/services/auth-api-client'
+import type { SignupCredentials } from '@/types/auth-types'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string()
+    .min(6, 'Password must be at least 6 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
   confirmPassword: z.string(),
+  role: z.enum(['student', 'instructor'], {
+    errorMap: () => ({ message: 'Please select a valid role' })
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -26,6 +32,8 @@ export function SignupForm() {
   const router = useRouter()
   const { login, setLoading, setError, clearError } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const {
     register,
@@ -40,19 +48,34 @@ export function SignupForm() {
       setIsLoading(true)
       setLoading(true)
       clearError()
+      console.log('Signup data:', data);
 
-      const response = await authService.signup(data)
+      // Remove confirmPassword before sending to API
+      const { confirmPassword, ...signupData } = data
+      console.log('Making API call to:', 'http://localhost:3000/api/auth/signup');
+      const response = await authService.signup(signupData)
+      console.log('Signup response:', response);
+
       
-      // Store token in localStorage
+      // Store tokens in localStorage
       localStorage.setItem('auth-token', response.token)
+      localStorage.setItem('refresh-token', response.refreshToken)
+      document.cookie = `auth-token=${response.token}; path=/; max-age=${15 * 60}` // 15 minutes
       
       // Update auth store
       login(response)
+      console.log('Login response:', response);
       
       // Redirect to dashboard
       router.push('/dashboard')
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Signup failed. Please try again.'
+      console.error('Signup error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
+      const errorMessage = error.message || error.response?.data?.message || 'Signup failed. Please try again.'
       setError(errorMessage)
     } finally {
       setIsLoading(false)
@@ -69,7 +92,7 @@ export function SignupForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">
               Full Name
@@ -106,13 +129,26 @@ export function SignupForm() {
             <label htmlFor="password" className="text-sm font-medium">
               Password
             </label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              {...register('password')}
-              className={errors.password ? 'border-red-500' : ''}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                {...register('password')}
+                className={`pr-10 ${errors.password ? 'border-red-500' : ''}`}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                ) : (
+                  <EyeIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-sm text-red-500">{errors.password.message}</p>
             )}
@@ -122,17 +158,57 @@ export function SignupForm() {
             <label htmlFor="confirmPassword" className="text-sm font-medium">
               Confirm Password
             </label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="Confirm your password"
-              {...register('confirmPassword')}
-              className={errors.confirmPassword ? 'border-red-500' : ''}
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Confirm your password"
+                {...register('confirmPassword')}
+                className={`pr-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeSlashIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                ) : (
+                  <EyeIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                )}
+              </button>
+            </div>
             {errors.confirmPassword && (
               <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
             )}
           </div>
+
+          <div className="space-y-2">
+            <label htmlFor="role" className="text-sm font-medium">
+              Role
+            </label>
+            <select
+              id="role"
+              {...register('role')}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.role ? 'border-red-500' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Select your role</option>
+              <option value="student">Student</option>
+              <option value="instructor">Instructor</option>
+            </select>
+            {errors.role && (
+              <p className="text-sm text-red-500">{errors.role.message}</p>
+            )}
+          </div>
+
+          {/* Error Message Display */}
+          {useAuthStore.getState().error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{useAuthStore.getState().error}</p>
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Creating account...' : 'Create Account'}

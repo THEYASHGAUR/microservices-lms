@@ -1,0 +1,138 @@
+---
+description: Microservices LMS Project - Coding Standards & Architecture Rules
+globs:
+alwaysApply: true
+---
+
+# Microservices LMS - Coding Standards & Architecture Rules
+
+## 🏗️ **Architecture Principles**
+
+### **Centralized API Services**
+- **ALL API calls, service calls, and endpoints MUST be in the `services/` folder**
+- Web-frontend and mobile-frontend MUST use the same API utilities
+- **NO duplicate code** for the same functionality across frontends
+- Each microservice handles its own domain logic (auth, user, video, payment, etc.)
+
+### **Service Structure**
+```
+services/
+├── auth-service/          # Authentication & authorization
+├── user-service/          # User management
+├── video-service/         # Video streaming & content
+├── payment-service/       # Payment processing
+├── notification-service/  # Notifications
+└── chat-call-service/     # Real-time communication
+```
+
+## 📝 **Coding Standards**
+
+### **File Naming Conventions**
+- **Descriptive & Clear**: Use specific names that explain purpose
+- **No Generic Names**: Avoid `auth.ts`, `utils.ts`, `service.ts`
+- **Examples**:
+  - ✅ `auth-api-client.ts` (not `auth.ts`)
+  - ✅ `server-session.ts` (not `auth.ts`)
+  - ✅ `user-profile-service.ts` (not `user.ts`)
+  - ✅ `payment-stripe-handler.ts` (not `payment.ts`)
+
+### **Function Naming**
+- **Verb + Noun**: `getUserProfile()`, `createPayment()`, `validateToken()`
+- **Clear Purpose**: Function name should explain what it does
+- **Consistent Patterns**: Use same naming across all services
+
+### **Single Line Comments**
+- **Every function MUST have a single line comment** explaining its purpose
+- **Format**: `// Function description in present tense`
+- **Examples**:
+  ```typescript
+  // Validates user authentication token and returns user data
+  async validateToken(token: string): Promise<User> { ... }
+  
+  // Creates a new payment session with Stripe
+  async createPaymentSession(amount: number): Promise<PaymentSession> { ... }
+  
+  // Sends password reset email to user
+  async sendPasswordResetEmail(email: string): Promise<void> { ... }
+  ```
+
+## 🚫 **Anti-Patterns to Avoid**
+
+### **Redundancy**
+- ❌ Duplicate API calls in web-frontend and mobile-frontend
+- ❌ Multiple files with same generic names (`auth.ts`, `utils.ts`)
+- ❌ Copy-paste code between services
+- ❌ Unused imports or dead code
+
+### **Poor Naming**
+- ❌ Generic file names that don't explain purpose
+- ❌ Function names without clear intent
+- ❌ Variables with single letters or unclear abbreviations
+
+## ✅ **Best Practices**
+
+### **Scalability**
+- Design for multiple frontends (web, mobile, desktop)
+- Use consistent API patterns across all services
+- Implement proper error handling and logging
+- Use TypeScript for type safety
+
+### **Maintainability**
+- Single responsibility principle for each service
+- Clear separation of concerns
+- Consistent code structure across all services
+- Proper documentation and comments
+
+### **Optimization**
+- Reuse existing services instead of creating new ones
+- Implement caching where appropriate
+- Use efficient data structures and algorithms
+- Minimize API calls and data transfer
+
+## 🔧 **Implementation Guidelines**
+
+### **API Service Structure**
+```typescript
+// services/[service-name]/src/services/[domain]-service.ts
+export class [Domain]Service {
+  // Handles [specific functionality] for [domain]
+  async [action][Entity](): Promise<[ReturnType]> { ... }
+  
+  // Validates [specific data] before processing
+  private validate[Entity](): boolean { ... }
+}
+```
+
+### **Frontend API Client Structure**
+```typescript
+// web-frontend/src/services/[domain]-api-client.ts
+export const [domain]ApiClient = {
+  // Fetches [entity] data from [service]
+  async get[Entity](): Promise<[Entity]> { ... }
+  
+  // Creates new [entity] via API
+  async create[Entity](): Promise<[Entity]> { ... }
+}
+```
+
+### **Type Definitions**
+```typescript
+// web-frontend/src/types/[domain]-types.ts
+export interface [Entity] {
+  // Clear property definitions with proper types
+  id: string
+  name: string
+  // ... other properties
+}
+```
+
+## 🎯 **Quality Checklist**
+
+Before committing any code, ensure:
+- [ ] File names are descriptive and specific
+- [ ] All functions have single-line comments
+- [ ] No duplicate code exists across frontends
+- [ ] API calls are centralized in services
+- [ ] TypeScript types are properly defined
+- [ ] Error handling is implemented
+- [ ] Code follows consistent patterns

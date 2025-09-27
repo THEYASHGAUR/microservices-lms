@@ -4,8 +4,8 @@ export interface User {
   name: string;
   password: string;
   role: 'student' | 'instructor' | 'admin';
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateUserData {
@@ -23,4 +23,5 @@ export interface LoginCredentials {
 export interface AuthResponse {
   user: Omit<User, 'password'>;
   token: string;
+  refreshToken: string;
 }
