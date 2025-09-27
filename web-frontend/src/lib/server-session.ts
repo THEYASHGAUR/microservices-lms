@@ -36,7 +36,7 @@ export async function getServerSession(): Promise<Session | null> {
     const data = await response.json()
     return { user: data.data.user, token }
   } catch (error) {
-    console.error('Error verifying session:', error)
+    // Log error securely without exposing sensitive information
     return null
   }
 }

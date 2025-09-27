@@ -37,23 +37,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      // Get token for logout call
-      const token = localStorage.getItem('auth-token') || document.cookie
-        .split(';')
-        .find(cookie => cookie.trim().startsWith('auth-token='))
-        ?.split('=')[1]
-      
-      if (token) {
-        // Call the auth service logout
-        await authService.logout(token)
-      }
+      // Call the auth service logout (handles token management internally)
+      await authService.logout()
     } catch (error) {
-      console.error('Logout error:', error)
+      // Logout continues even if server request fails
+      // Error is handled securely in the auth service
     } finally {
       // Clear local state and storage
       logout()
-      localStorage.removeItem('auth-token')
-      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       
       // Redirect to login page
       router.push('/auth/login')

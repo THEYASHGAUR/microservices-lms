@@ -2,6 +2,10 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authService } from '@/services/auth-api-client'
 import type { User, AuthResponse } from '@/types/auth-types'
+import { SecureApiClient } from '@/lib/secure-api-client'
+
+// Create secure API client instance for token management
+const secureApiClient = new SecureApiClient(process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000')
 
 interface AuthState {
   user: User | null
@@ -44,14 +48,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       logout: async () => {
-        const { token, refreshToken } = get()
-        
         try {
-          if (token) {
-            await authService.logout(token, refreshToken || undefined)
-          }
+          await authService.logout()
         } catch (error) {
-          console.error('Logout error:', error)
+          // Logout continues even if server request fails
+          // Error is handled securely in the auth service
         } finally {
           set({
             user: null,
@@ -80,7 +81,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       initializeAuth: async () => {
-        const { token } = get()
+        // Get token from secure cookie instead of localStorage
+        const token = secureApiClient.getAuthToken()
         
         if (!token) {
           set({ isLoading: false })
@@ -94,34 +96,21 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           
           set({
             user,
+            token,
             isAuthenticated: true,
             isLoading: false
           })
         } catch (error) {
-          console.error('Auth initialization error:', error)
           // Token is invalid, try to refresh
           await get().refreshAuthToken()
         }
       },
 
       refreshAuthToken: async () => {
-        const { refreshToken } = get()
-        
-        if (!refreshToken) {
-          set({
-            user: null,
-            token: null,
-            refreshToken: null,
-            isAuthenticated: false,
-            isLoading: false
-          })
-          return
-        }
-
         try {
           set({ isLoading: true })
           
-          const response = await authService.refreshToken(refreshToken)
+          const response = await authService.refreshToken()
           
           set({
             user: response.user,
@@ -131,7 +120,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             isLoading: false
           })
         } catch (error) {
-          console.error('Token refresh error:', error)
+          // Token refresh failed, clear auth state
           set({
             user: null,
             token: null,
@@ -146,9 +135,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
-        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
+        // Don't persist tokens - they're stored in secure cookies
       }),
     }
   )

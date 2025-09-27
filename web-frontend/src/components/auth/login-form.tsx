@@ -41,20 +41,14 @@ export function LoginForm() {
 
       const response = await authService.login(data)
       
-      console.log('Login response:', response)
-      
-      // Store tokens in localStorage and cookies
-      localStorage.setItem('auth-token', response.token)
-      localStorage.setItem('refresh-token', response.refreshToken)
-      document.cookie = `auth-token=${response.token}; path=/; max-age=${15 * 60}` // 15 minutes
-      
-      // Update auth store
+      // Update auth store (tokens are now stored securely in httpOnly cookies)
       login(response)
       
       // Redirect to dashboard
       router.push('/')
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.'
+      // Error handling is now done securely in the API client
+      const errorMessage = error.message || 'Login failed. Please try again.'
       setError(errorMessage)
     } finally {
       setIsLoading(false)

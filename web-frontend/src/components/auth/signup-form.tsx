@@ -49,34 +49,19 @@ export function SignupForm() {
       setIsLoading(true)
       setLoading(true)
       clearError()
-      console.log('Signup data:', data);
 
       // Remove confirmPassword before sending to API
       const { confirmPassword, ...signupData } = data
-      console.log('Making API call to:', 'http://localhost:3000/api/auth/signup');
       const response = await authService.signup(signupData)
-      console.log('Signup response:', response);
-
       
-      // Store tokens in localStorage
-      localStorage.setItem('auth-token', response.token)
-      localStorage.setItem('refresh-token', response.refreshToken)
-      document.cookie = `auth-token=${response.token}; path=/; max-age=${15 * 60}` // 15 minutes
-      
-      // Update auth store
+      // Update auth store (tokens are now stored securely in httpOnly cookies)
       login(response)
-      console.log('Login response:', response);
       
       // Redirect to home page (which will redirect to role-specific dashboard)
       router.push('/' as Route) 
     } catch (error: any) {
-      console.error('Signup error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        status: error.status,
-        response: error.response
-      });
-      const errorMessage = error.message || error.response?.data?.message || 'Signup failed. Please try again.'
+      // Error handling is now done securely in the API client
+      const errorMessage = error.message || 'Signup failed. Please try again.'
       setError(errorMessage)
     } finally {
       setIsLoading(false)
