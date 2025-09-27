@@ -14,7 +14,7 @@ import {
   CogIcon,
   Bars3Icon,
   XMarkIcon,
-  ArrowRightOnRectangleIcon,
+  ArrowRightStartOnRectangleIcon,
   CreditCardIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
@@ -181,7 +181,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               onClick={handleLogout}
               className="mt-2 w-full justify-start"
             >
-              <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
+              <ArrowRightStartOnRectangleIcon className="mr-2 h-4 w-4" />
               Sign out
             </Button>
           </div>
@@ -238,7 +238,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               onClick={handleLogout}
               className="mt-2 w-full justify-start"
             >
-              <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
+              <ArrowRightStartOnRectangleIcon className="mr-2 h-4 w-4" />
               Sign out
             </Button>
           </div>
