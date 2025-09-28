@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
-import { authenticateToken, requireAdmin } from '../../../../shared/middlewares/roleAuth';
+import { authenticateToken, requireAdmin } from '../../../shared';
 
 const router = Router();
 

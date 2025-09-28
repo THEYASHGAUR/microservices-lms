@@ -3,7 +3,7 @@ import { body, param, query, validationResult } from 'express-validator';
 import { HTTP_STATUS, ERROR_MESSAGES } from '../constants';
 import logger from '../logger';
 
-export const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
+export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
@@ -13,11 +13,12 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
       method: req.method
     });
     
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
       success: false,
       error: ERROR_MESSAGES.VALIDATION_ERROR,
       details: errors.array()
     });
+    return;
   }
   
   next();

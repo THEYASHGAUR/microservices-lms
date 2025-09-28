@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { supabase } from '../config/supabase';
 import { CreateUserData, LoginCredentials, AuthResponse } from '../models/user.model';
-import logger from '../../../../shared/logger';
+import { logger } from '../../../shared';
 
 // Supabase handles user storage, JWT tokens, and session management
 

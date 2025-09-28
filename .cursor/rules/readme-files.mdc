@@ -1,0 +1,5 @@
+---
+description: dont create un-necessary readme files...until i say it to u...
+globs:
+alwaysApply: true
+---

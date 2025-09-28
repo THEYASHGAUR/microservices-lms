@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/auth.service';
 import { LoginCredentials, CreateUserData } from '../models/user.model';
-import logger from '../../../../shared/logger';
+import { logger } from '../../../shared';
 
 export class AuthController {
   // Handles user login request and returns authentication response

@@ -1,36 +1,16 @@
 import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-const SERVICE_PORTS = {
-  API_GATEWAY: 3000,
-  AUTH_SERVICE: 3001,
-  USER_SERVICE: 3002,
-  VIDEO_SERVICE: 3003,
-  CHAT_CALL_SERVICE: 3004,
-  PAYMENT_SERVICE: 3005,
-  NOTIFICATION_SERVICE: 3006
-};
-
-const CORS_CONFIG = {
-  origin: 'http://localhost:4000',
-  credentials: true
-};
+import { SERVICE_PORTS, setupExpressMiddleware, setupHealthCheck } from '../../../shared/constants';
 // Startup logging will use console to avoid interop issues
 
 const app = express();
 const PORT = SERVICE_PORTS.API_GATEWAY;
 
-// Middleware
-app.use(helmet());
-app.use(cors(CORS_CONFIG));
-app.use(morgan('combined'));
+// Setup common middleware
+setupExpressMiddleware(app);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', service: 'api-gateway' });
-});
+// Setup standard endpoints
+setupHealthCheck(app, 'api-gateway');
 
 // Proxy routes to microservices
 app.use('/api/auth', createProxyMiddleware({
@@ -85,6 +65,21 @@ app.use('/api/notifications', createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/notifications': '/api'
+  }
+}));
+
+app.use('/api/courses', createProxyMiddleware({
+  target: `http://localhost:${SERVICE_PORTS.COURSE_SERVICE}`,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/courses': '/api'
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    console.log('Proxying course request to:', proxyReq.path);
+  },
+  onError: (err, req, res) => {
+    console.error('Course service proxy error:', err);
+    res.status(500).json({ error: 'Course service error', message: err.message });
   }
 }));
 

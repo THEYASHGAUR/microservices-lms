@@ -18,7 +18,8 @@ export const SERVICE_PORTS = {
   VIDEO_SERVICE: 3003,
   CHAT_CALL_SERVICE: 3004,
   PAYMENT_SERVICE: 3005,
-  NOTIFICATION_SERVICE: 3006
+  NOTIFICATION_SERVICE: 3006,
+  COURSE_SERVICE: 3007
 } as const;
 
 export const SERVICE_URLS = {
@@ -28,7 +29,8 @@ export const SERVICE_URLS = {
   VIDEO_SERVICE: `http://localhost:${SERVICE_PORTS.VIDEO_SERVICE}`,
   CHAT_CALL_SERVICE: `http://localhost:${SERVICE_PORTS.CHAT_CALL_SERVICE}`,
   PAYMENT_SERVICE: `http://localhost:${SERVICE_PORTS.PAYMENT_SERVICE}`,
-  NOTIFICATION_SERVICE: `http://localhost:${SERVICE_PORTS.NOTIFICATION_SERVICE}`
+  NOTIFICATION_SERVICE: `http://localhost:${SERVICE_PORTS.NOTIFICATION_SERVICE}`,
+  COURSE_SERVICE: `http://localhost:${SERVICE_PORTS.COURSE_SERVICE}`
 } as const;
 
 export const DATABASE_CONFIG = {
@@ -136,3 +138,6 @@ export const SUCCESS_MESSAGES = {
   PAYMENT_SUCCESS: 'Payment completed successfully',
   MESSAGE_SENT: 'Message sent successfully'
 } as const;
+
+// Re-export middleware setup for convenience
+export { setupExpressMiddleware, setupHealthCheck, setupTestEndpoint } from '../middlewares/express-setup';

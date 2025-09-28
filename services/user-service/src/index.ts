@@ -1,28 +1,17 @@
 import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { SERVICE_PORTS, CORS_CONFIG } from '../../../shared/constants';
+import { SERVICE_PORTS } from '../../../shared/constants';
+import { setupExpressMiddleware, setupHealthCheck, setupTestEndpoint } from '../../../shared/middlewares/express-setup';
 import logger from '../../../shared/logger';
 
 const app = express();
 const PORT = SERVICE_PORTS.USER_SERVICE;
 
-// Middleware
-app.use(helmet());
-app.use(cors(CORS_CONFIG));
-app.use(morgan('combined'));
-app.use(express.json());
+// Setup common middleware
+setupExpressMiddleware(app);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', service: 'user-service' });
-});
-
-// Routes
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'User service is running' });
-});
+// Setup standard endpoints
+setupHealthCheck(app, 'user-service');
+setupTestEndpoint(app, 'User service');
 
 app.listen(PORT, () => {
   logger.info(`User service running on port ${PORT}`);

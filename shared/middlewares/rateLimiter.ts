@@ -102,8 +102,8 @@ export const chatLimiter = rateLimit({
 export const apiKeyLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 60, // limit each API key to 60 requests per minute
-  keyGenerator: (req: Request) => {
-    return req.headers['x-api-key'] as string || req.ip;
+  keyGenerator: (req: Request): string => {
+    return (req.headers['x-api-key'] as string) || req.ip || 'unknown';
   },
   message: {
     success: false,

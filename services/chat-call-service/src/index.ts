@@ -1,10 +1,8 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
 import { SERVICE_PORTS, CORS_CONFIG } from '../../../shared/constants';
+import { setupExpressMiddleware, setupHealthCheck, setupTestEndpoint } from '../../../shared/middlewares/express-setup';
 import logger from '../../../shared/logger';
 
 const app = express();
@@ -15,21 +13,12 @@ const io = new Server(server, {
 
 const PORT = SERVICE_PORTS.CHAT_CALL_SERVICE;
 
-// Middleware
-app.use(helmet());
-app.use(cors(CORS_CONFIG));
-app.use(morgan('combined'));
-app.use(express.json());
+// Setup common middleware
+setupExpressMiddleware(app);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', service: 'chat-call-service' });
-});
-
-// Routes
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Chat & Call service is running' });
-});
+// Setup standard endpoints
+setupHealthCheck(app, 'chat-call-service');
+setupTestEndpoint(app, 'Chat & Call service');
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

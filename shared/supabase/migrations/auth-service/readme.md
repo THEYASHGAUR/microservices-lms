@@ -36,12 +36,12 @@ This folder contains SQL migration files for setting up a **future-proof authent
 
 ```env
 # Backend
-SUPABASE_URL=https://yzljqpxqnnzmntfsktjo.supabase.co
+SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:4000
 
 # Frontend
-NEXT_PUBLIC_SUPABASE_URL=https://yzljqpxqnnzmntfsktjo.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 

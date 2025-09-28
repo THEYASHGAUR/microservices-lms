@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../logger';
-import { supabase } from '../../services/auth-service/src/config/supabase';
+import { getSupabaseClient } from '../supabase';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -24,6 +24,8 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
   }
 
   try {
+    const supabase = getSupabaseClient();
+    
     // Verify token with Supabase
     const { data, error } = await supabase.auth.getUser(token);
     
