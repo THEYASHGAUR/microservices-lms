@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
-import { authenticateToken, requireAdmin } from '../../../shared';
+import { authenticateToken, requireAdmin } from '#shared';
 
 const router = Router();
 
@@ -8,16 +8,14 @@ const router = Router();
 router.post('/login', authController.login.bind(authController));
 router.post('/signup', authController.signup.bind(authController));
 router.post('/logout', authController.logout.bind(authController));
-router.get('/verify', authController.verify.bind(authController));
+
+// Protected routes
+router.get('/verify', authenticateToken as any, authController.verify.bind(authController));
 router.post('/refresh', authController.refresh.bind(authController));
+router.get('/users', authenticateToken as any, requireAdmin as any, authController.getUsers.bind(authController));
+router.put('/profile', authenticateToken as any, authController.updateProfile.bind(authController));
+router.post('/change-password', authenticateToken as any, authController.changePassword.bind(authController));
 router.post('/request-password-reset', authController.requestPasswordReset.bind(authController));
 router.post('/reset-password', authController.resetPassword.bind(authController));
-
-// Protected user routes
-router.put('/profile', authenticateToken, authController.updateProfile.bind(authController));
-router.put('/change-password', authenticateToken, authController.changePassword.bind(authController));
-
-// Admin routes
-router.get('/users', authenticateToken, requireAdmin, authController.getUsers.bind(authController));
 
 export default router;

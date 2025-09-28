@@ -23,7 +23,8 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
-      "@lms/shared": ["../../shared"]
+      "#shared": ["../../shared/index.ts"],
+      "#shared/*": ["../../shared/*"]
     },
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,

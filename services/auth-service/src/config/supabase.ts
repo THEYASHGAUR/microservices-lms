@@ -5,7 +5,7 @@ import {
   validateSupabaseConnection,
   validateSupabaseEnvironment,
   AuthServiceSupabase
-} from '../../../shared/supabase'
+} from '#shared/supabase'
 
 // Export the client instance (not the function)
 export const supabase = getSupabaseClient()

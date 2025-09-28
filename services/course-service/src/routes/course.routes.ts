@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { CourseController } from '../controllers/course.controller'
-import { authenticateToken, requireInstructorOrAdmin, requireStudent } from '../../../shared/middlewares/auth.middleware'
+import { authenticateToken, requireInstructorOrAdmin, requireStudent } from '#shared'
 
 const router = Router()
 const courseController = new CourseController()

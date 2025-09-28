@@ -1,16 +1,19 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/auth.service';
 import { LoginCredentials, CreateUserData } from '../models/user.model';
-import { logger } from '../../../shared';
+import { logger } from '#shared';
 
 export class AuthController {
   // Handles user login request and returns authentication response
   async login(req: Request, res: Response): Promise<void> {
     try {
+      console.log('Login request received:', { email: req.body?.email, timestamp: new Date().toISOString() });
+      
       const credentials: LoginCredentials = req.body;
       
       // Basic validation
       if (!credentials.email || !credentials.password) {
+        console.log('Login validation failed: missing email or password');
         res.status(400).json({
           success: false,
           message: 'Email and password are required'
@@ -18,14 +21,17 @@ export class AuthController {
         return;
       }
 
+      console.log('Attempting login for email:', credentials.email);
       const result = await authService.login(credentials);
       
+      console.log('Login successful for email:', credentials.email);
       res.status(200).json({
         success: true,
         message: 'Login successful',
         data: result
       });
     } catch (error: any) {
+      console.error('Login error for email:', req.body?.email, error);
       logger.error('Login error:', error);
       res.status(401).json({
         success: false,

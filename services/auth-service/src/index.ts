@@ -1,10 +1,10 @@
-// Load environment variables from ROOT .env file (single source of truth)
+// Load environment variables from service .env file
 import dotenv from 'dotenv';
 import path from 'path';
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import express from 'express';
-import { SERVICE_PORTS, setupExpressMiddleware, setupHealthCheck, setupTestEndpoint } from '../../../shared';
+import { SERVICE_PORTS, setupExpressMiddleware, setupHealthCheck, setupTestEndpoint } from '#shared';
 import authRoutes from './routes/auth.routes';
 
 const app = express();
