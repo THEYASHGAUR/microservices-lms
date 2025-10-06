@@ -5,7 +5,7 @@ which includes
 
 frontend - react.js / Next.js 
 backend - node.js and Typescript 
-DB - supabase , Mysql and postgresql 
+DB - supabase , Mysql and mongo
 
 Caching - redis 
 

@@ -219,12 +219,12 @@ export class CourseService {
 
     const stats: CourseStats = {
       total_courses: courses?.length || 0,
-      published_courses: courses?.filter(c => c.is_published).length || 0,
-      draft_courses: courses?.filter(c => !c.is_published).length || 0,
-      total_enrollments: courses?.reduce((sum, c) => sum + c.total_enrollments, 0) || 0,
-      total_revenue: courses?.reduce((sum, c) => sum + (c.price * c.total_enrollments), 0) || 0,
-      average_rating: courses?.reduce((sum, c) => sum + c.average_rating, 0) / (courses?.length || 1) || 0,
-      total_lessons: courses?.reduce((sum, c) => sum + c.total_lessons, 0) || 0
+      published_courses: courses?.filter((c: Course) => c.is_published).length || 0,
+      draft_courses: courses?.filter((c: Course) => !c.is_published).length || 0,
+      total_enrollments: courses?.reduce((sum: number, c: Course) => sum + c.total_enrollments, 0) || 0,
+      total_revenue: courses?.reduce((sum: number, c: Course) => sum + (c.price * c.total_enrollments), 0) || 0,
+      average_rating: courses?.reduce((sum: number, c: Course) => sum + c.average_rating, 0) / (courses?.length || 1) || 0,
+      total_lessons: courses?.reduce((sum: number, c: Course) => sum + c.total_lessons, 0) || 0
     }
 
     return stats
@@ -300,7 +300,7 @@ export class CourseService {
       .eq('status', 'active')
 
     if (error) throw error
-    return data?.map(enrollment => ({
+    return data?.map((enrollment: any) => ({
       ...enrollment.course,
       user_enrollment: enrollment
     })) || []
@@ -344,7 +344,7 @@ export class CourseService {
 
     if (progressError) throw progressError
 
-    const averageProgress = progress?.reduce((sum, p) => sum + p.progress_percentage, 0) / (progress?.length || 1) || 0
+    const averageProgress = progress?.reduce((sum: number, p: any) => sum + p.progress_percentage, 0) / (progress?.length || 1) || 0
 
     const { error } = await supabase
       .from('enrollments')
@@ -409,6 +409,6 @@ export class CourseService {
       .order('added_at', { ascending: false })
 
     if (error) throw error
-    return data?.map(item => item.course) || []
+    return data?.map((item: any) => item.course) || []
   }
 }

@@ -4,13 +4,13 @@ import path from 'path'
 import { SERVICE_PORTS } from '../../../shared/constants';
 import { setupExpressMiddleware, setupHealthCheck } from '../../../shared/middlewares/express-setup'
 import courseRoutes from './routes/course.routes'
-import { validateSupabaseEnvironment } from './config/supabase'
+import { validateSupabaseConnection } from './config/supabase'
 
 // Load environment variables from ROOT .env file (single source of truth)
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') })
 
 // Validate environment configuration
-validateSupabaseEnvironment()
+validateSupabaseConnection()
 
 const app = express()
 const PORT = SERVICE_PORTS.COURSE_SERVICE

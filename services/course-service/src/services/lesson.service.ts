@@ -242,7 +242,7 @@ export class LessonService {
 
     if (progressError) throw progressError
 
-    const completedLessonIds = progress?.map(p => p.lesson_id) || []
+    const completedLessonIds = progress?.map((p: any) => p.lesson_id) || []
 
     const { data, error } = await supabase
       .from('lessons')

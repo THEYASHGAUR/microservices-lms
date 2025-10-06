@@ -73,11 +73,20 @@ export class SecureApiClient {
         throw error
       }
       
-      // Network or other errors
+      // Check if it's a network error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new SecureApiError(
+          'Unable to connect to the server. Please ensure the API Gateway is running on port 3000.',
+          0,
+          'NETWORK_ERROR'
+        )
+      }
+      
+      // Other errors
       throw new SecureApiError(
-        'Network error occurred. Please check your connection.',
+        'An unexpected error occurred. Please try again.',
         0,
-        'NETWORK_ERROR'
+        'UNKNOWN_ERROR'
       )
     }
   }
