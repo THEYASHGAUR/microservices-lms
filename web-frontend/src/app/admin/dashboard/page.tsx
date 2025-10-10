@@ -13,7 +13,6 @@ import {
   ClockIcon,
   CheckCircleIcon,
   ShieldCheckIcon,
-  ArrowTrendingUpIcon,
   ExclamationTriangleIcon,
   ServerIcon
 } from '@heroicons/react/24/outline'

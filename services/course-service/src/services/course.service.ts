@@ -59,11 +59,20 @@ export class CourseService {
       query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
     }
 
-    const { data, error, count } = await query
-      .range((page - 1) * limit, page * limit - 1)
-      .limit(limit)
+    let data, error, count;
+    try {
+      ({ data, error, count } = await query
+        .range((page - 1) * limit, page * limit - 1)
+        .limit(limit));
+    } catch (err) {
+      console.error('❌ Supabase query threw an exception:', err);
+      throw new Error('Database query failed. Please check Supabase connection.');
+    }
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ Supabase error:', error.message, error.details || '', error.hint || '');
+      throw new Error(`Supabase error: ${error.message}`);
+    }
 
     return {
       courses: data || [],

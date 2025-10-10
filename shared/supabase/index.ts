@@ -63,8 +63,8 @@ export const validateSupabaseConnection = async (): Promise<boolean> => {
     
     // Try to access a simple table to validate connection
     // Use a more generic approach that works with any Supabase project
-    const { data, error } = await supabase
-      .from('auth.users')
+    const { error } = await supabase
+      .from('courses')
       .select('count')
       .limit(1)
     
@@ -79,7 +79,7 @@ export const validateSupabaseConnection = async (): Promise<boolean> => {
     console.error('❌ Supabase connection validation failed:', error)
     return false
   }
-}
+} 
 
 // Re-export all service-specific configurations
 export { AuthServiceSupabase } from './services/auth-service'

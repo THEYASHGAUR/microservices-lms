@@ -8,9 +8,9 @@ export class AuthController {
   async login(req: Request, res: Response): Promise<void> {
     try {
       console.log('Login request received:', { email: req.body?.email, timestamp: new Date().toISOString() });
-      
+
       const credentials: LoginCredentials = req.body;
-      
+
       // Basic validation
       if (!credentials.email || !credentials.password) {
         console.log('Login validation failed: missing email or password');
@@ -23,19 +23,46 @@ export class AuthController {
 
       console.log('Attempting login for email:', credentials.email);
       const result = await authService.login(credentials);
-      
+
+      // Set httpOnly, Secure cookies for auth-token and refresh-token
+      const isProduction = process.env.NODE_ENV === 'production';
+      const cookieOptions = {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' as const : 'lax' as const, // Explicitly set allowed values with correct type
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        path: '/',
+      };
+
+      res.cookie('auth-token', result.token, cookieOptions);
+      console.log('Auth token cookie set:', { token: result.token, options: cookieOptions });
+
+      res.cookie('refresh-token', result.refreshToken, {
+        ...cookieOptions,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      console.log('Refresh token cookie set:', { refreshToken: result.refreshToken, options: cookieOptions });
+
       console.log('Login successful for email:', credentials.email);
       res.status(200).json({
         success: true,
         message: 'Login successful',
-        data: result
+        data: {
+          user: result.user
+        }
       });
     } catch (error: any) {
       console.error('Login error for email:', req.body?.email, error);
       logger.error('Login error:', error);
+
+      // Standardize error response
+      const errorMessage = error.message.includes('Invalid email or password')
+        ? 'Invalid credentials. Please try again.'
+        : 'Login failed. Please contact support.';
+
       res.status(401).json({
         success: false,
-        message: error.message || 'Login failed'
+        message: errorMessage
       });
     }
   }
@@ -81,19 +108,21 @@ export class AuthController {
   // Verifies JWT token and returns user information
   async verify(req: Request, res: Response): Promise<void> {
     try {
+      let token = null;
       const authHeader = req.headers.authorization;
-      
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      } else if (req.cookies && req.cookies['auth-token']) {
+        token = req.cookies['auth-token'];
+      }
+      if (!token) {
         res.status(401).json({
           success: false,
           message: 'No token provided'
         });
         return;
       }
-
-      const token = authHeader.substring(7);
       const user = await authService.verifyToken(token);
-      
       res.status(200).json({
         success: true,
         message: 'Token is valid',

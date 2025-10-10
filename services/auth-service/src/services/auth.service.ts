@@ -11,25 +11,35 @@ export class AuthService {
     const { email, password } = credentials;
 
     try {
+      console.log('Attempting login with email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) {
-        throw new Error('Invalid email or password');
+        console.error('Supabase login error:', error.message);
+        throw new Error(`Supabase error: ${error.message}`);
       }
 
       if (!data.user || !data.session) {
-        throw new Error('Login failed');
+        console.error('Supabase login failed: No user or session returned');
+        throw new Error('Login failed: No user or session returned');
       }
 
+      console.log('Login successful. Token:', data.session.access_token);
+
       // Get user profile with role
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user.id)
         .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError.message);
+        throw new Error(`Profile fetch error: ${profileError.message}`);
+      }
 
       const user = {
         id: data.user.id,
@@ -40,16 +50,17 @@ export class AuthService {
         updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
       };
 
-      logger.info(`User ${email} logged in successfully`);
+      console.log('User profile fetched successfully:', user);
 
       return {
         user,
         token: data.session.access_token,
         refreshToken: data.session.refresh_token
       };
-    } catch (error: any) {
-      logger.error('Login error:', error);
-      throw new Error('Invalid email or password');
+    } catch (error) {
+      console.error('Login process failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Invalid email or password';
+      throw new Error(errorMessage);
     }
   }
 
@@ -128,18 +139,30 @@ export class AuthService {
   // Validates JWT token and returns user data
   async verifyToken(token: string): Promise<any> {
     try {
+      console.log('Verifying token:', token);
       const { data, error } = await supabase.auth.getUser(token);
-      
-      if (error || !data.user) {
+
+      if (error) {
+        console.error('Supabase token verification error:', error.message);
+        throw new Error('Invalid token');
+      }
+
+      if (!data.user) {
+        console.error('Supabase returned no user for token:', token);
         throw new Error('Invalid token');
       }
 
       // Get user profile with role
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user.id)
         .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError.message);
+        throw new Error('Failed to fetch user profile');
+      }
 
       return {
         id: data.user.id,
@@ -150,6 +173,7 @@ export class AuthService {
         updatedAt: new Date(data.user.updated_at || data.user.created_at).toISOString()
       };
     } catch (error) {
+      console.error('Token verification failed:', error);
       throw new Error('Invalid token');
     }
   }

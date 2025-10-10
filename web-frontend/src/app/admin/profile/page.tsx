@@ -4,10 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { 
-  UserIcon, 
-  EnvelopeIcon, 
-  PhoneIcon, 
-  CalendarIcon,
   ShieldCheckIcon,
   UserGroupIcon,
   BookOpenIcon,

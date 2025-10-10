@@ -12,18 +12,20 @@ export interface AuthenticatedRequest extends Request {
 // Basic authentication middleware that can be extended by services
 export const authenticateToken = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    let token = null;
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
-
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (req.cookies && req.cookies['auth-token']) {
+      token = req.cookies['auth-token'];
+    }
     if (!token) {
       res.status(401).json({ error: 'Access token required' });
       return;
     }
-
     // This is a placeholder - services should implement their own token validation
     // using their specific Supabase client
     logger.warn('Using placeholder authentication - services should implement proper token validation');
-    
     // For now, just pass through - services will implement proper validation
     next();
   } catch (error) {

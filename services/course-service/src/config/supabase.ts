@@ -24,10 +24,12 @@ export const createUserClient = (accessToken: string) => {
 }
 
 // Validate Supabase connection
+
 export const validateSupabaseConnection = async (): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
-      .from('auth.users')
+    // Simple connection test - just check if we can execute a basic query
+    const { error } = await supabase
+      .from('courses')
       .select('count')
       .limit(1)
     
