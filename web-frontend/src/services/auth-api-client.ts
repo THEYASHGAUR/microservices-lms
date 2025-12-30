@@ -3,7 +3,7 @@ import { SecureApiClient, SecureApiError } from '@/lib/secure-api-client'
 import { SecureCookieManager } from '@/lib/secure-cookie-utils'
 
 // Resolves base URL for auth API (gateway by default; can point directly to auth service via env)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000'
 
 // Creates secure API client instance
 const secureApiClient = new SecureApiClient(API_BASE_URL)
